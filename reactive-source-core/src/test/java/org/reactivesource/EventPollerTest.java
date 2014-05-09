@@ -113,8 +113,8 @@ public class EventPollerTest {
 
     @Test(groups = SMALL)
     public void testDataAccessExceptionIsThrownWhenUnsuccessfullyAttemptingToReconnect() throws InterruptedException {
-        //TODO: Check test correctness
         Thread poller = startPollingThread();
+        sleep(100L); //wait for the thread to start
 
         // pretend the source disconnects after the initialization
         when(evtSource.isConnected()).thenReturn(false);
