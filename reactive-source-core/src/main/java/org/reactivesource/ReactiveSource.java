@@ -11,6 +11,31 @@ import org.slf4j.LoggerFactory;
 
 import static org.reactivesource.util.Assert.notNull;
 
+/**
+ * The {@link org.reactivesource.ReactiveSource} is the entry point of the framework.
+ * <p/>
+ * To monitor one (supported) EventSource all you need to do is to create a new ReactiveSource with this event source
+ * and start it.
+ * <p/>
+ * <u>Example</u>
+ * <pre>
+ *   {@code MysqlEventSource eventSource = new MysqlEventSource(connectionProvider, "table_name");
+ *     ReactiveSource<String> reactiveSource = new ReactiveSource(eventSource);
+ *     reactiveSource.add(eventListener);
+ *     //start listening to events
+ *     reactiveSource.start();
+ *     ...
+ *     //stop listening
+ *     reactiveSource.stop();
+ *     }
+ * </pre>
+ *
+ * @see  org.reactivesource.EventListener
+ * @see  org.reactivesource.EventSource
+ *
+ * @param <T> the class of the monitored entity
+ *
+ */
 public class ReactiveSource<T> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -29,7 +54,7 @@ public class ReactiveSource<T> {
 
     @VisibleForTesting ReactiveSource(EventChannel<T> eventChannel, EventPoller<T> eventPoller) {
         super();
-        logger.info("Initializing ReactiveDatasource");
+        logger.info("Initializing ReactiveSource");
         notNull(eventChannel, "eventChannel can not be null");
         notNull(eventPoller, "eventPoller can not be null");
         this.eventChannel = eventChannel;
@@ -38,7 +63,7 @@ public class ReactiveSource<T> {
     }
 
     public void addEventListener(EventListener<T> listener) {
-        logger.info("Adding listener to ReactiveDatasource.");
+        logger.info("Adding listener to ReactiveSource.");
         notNull(listener, "Can not add null eventListener");
         eventChannel.addEventListener(listener);
     }
@@ -55,7 +80,7 @@ public class ReactiveSource<T> {
      */
     public void start() {
         if (!isStarted()) {
-            logger.info("Starting ReactiveDatasource");
+            logger.info("Starting ReactiveSource");
             pollerDaemon = new Thread(eventPoller);
             pollerDaemon.setDaemon(true);
             pollerDaemon.start();
@@ -66,7 +91,7 @@ public class ReactiveSource<T> {
      * <p>
      * Stops monitoring the {@link EventSource} associated with this {@link ReactiveSource}.
      * </p>
-     *
+     * <p/>
      * <p>
      * If you start the {@link ReactiveSource} again, any events that occurred in eventSource the between stopping
      * the {@link ReactiveSource} and starting it again will be lost.
@@ -74,7 +99,7 @@ public class ReactiveSource<T> {
      */
     public void stop() {
         if (isStarted()) {
-            logger.info("Stopping ReactiveDatasource");
+            logger.info("Stopping ReactiveSource");
             eventPoller.stop();
             pollerDaemon = null;
         }

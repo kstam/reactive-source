@@ -28,7 +28,7 @@ public class ReactiveSourceTest {
     @BeforeMethod(groups = SMALL)
     public void setUp() {
         initMocks(this);
-        reactiveSource = new ReactiveSource<Integer>(channel, poller);
+        reactiveSource = new ReactiveSource<>(channel, poller);
     }
 
     @Test(groups = SMALL, expectedExceptions = IllegalArgumentException.class)

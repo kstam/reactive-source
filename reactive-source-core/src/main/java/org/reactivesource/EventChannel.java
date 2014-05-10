@@ -1,6 +1,6 @@
 /*******************************************************************************
  * Copyright (c) 2013-2014 eBay Software Foundation
- * 
+ *
  * See the file license.txt for copying permission.
  ******************************************************************************/
 package org.reactivesource;
@@ -17,7 +17,7 @@ import static org.reactivesource.util.Assert.notNull;
 /**
  * The EventChannel is responsible for propagating events to the registered event listeners.
  *
- * @param <T> The type of the object expected by the event listeners. 
+ * @param <T> The type of the object expected by the event listeners.
  */
 class EventChannel<T> {
 
@@ -33,7 +33,7 @@ class EventChannel<T> {
 
     /**
      * Adds an event listener at the exit of the channel. This listener will be notified about any new events.
-     * 
+     *
      * @param eventListener
      */
     void addEventListener(EventListener<T> eventListener) {
@@ -43,7 +43,7 @@ class EventChannel<T> {
 
     /**
      * Pushes new event to the channel. Will notify the event listeners, unless muted.
-     * 
+     *
      * @param event
      */
     void pushEvent(Event<Map<String, Object>> event) {

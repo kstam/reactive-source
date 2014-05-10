@@ -1,6 +1,6 @@
 /*******************************************************************************
  * Copyright (c) 2013-2014 eBay Software Foundation
- * 
+ *
  * See the file license.txt for copying permission.
  ******************************************************************************/
 package org.reactivesource;
@@ -9,6 +9,21 @@ import com.google.common.base.Objects;
 
 import static org.reactivesource.util.Assert.hasText;
 import static org.reactivesource.util.Assert.notNull;
+
+/**
+ * The {@link org.reactivesource.Event} reflects any modification that happens on the monitored event source.
+ * <p/>
+ * An event can belong to one of the following three types:
+ * <ul>
+ * <li>INSERT</li>
+ * <li>UPDATE</li>
+ * <li>DELETE</li>
+ * </ul>
+ * <p/>
+ * And contains the old entity, the new entity and the name of the monitored entity.
+ *
+ * @param <T> the class of the monitored entity.
+ */
 
 public class Event<T> {
 
@@ -49,21 +64,21 @@ public class Event<T> {
     }
 
     @Override
-    public int hashCode(){
-    	return Objects.hashCode(eventType, entityName, oldEntity, newEntity);
+    public int hashCode() {
+        return Objects.hashCode(eventType, entityName, oldEntity, newEntity);
     }
-    
+
     @Override
     @SuppressWarnings("unchecked")
-    public boolean equals(Object object){
-    	if (object instanceof Event) {
-    		Event<T> that = (Event<T>) object;
-    		return Objects.equal(this.eventType, that.eventType)
-    			&& Objects.equal(this.entityName, that.entityName)
-    			&& Objects.equal(this.oldEntity, that.oldEntity)
-    			&& Objects.equal(this.newEntity, that.newEntity);
-    	}
-    	return false;
+    public boolean equals(Object object) {
+        if (object instanceof Event) {
+            Event<T> that = (Event<T>) object;
+            return Objects.equal(this.eventType, that.eventType)
+                    && Objects.equal(this.entityName, that.entityName)
+                    && Objects.equal(this.oldEntity, that.oldEntity)
+                    && Objects.equal(this.newEntity, that.newEntity);
+        }
+        return false;
     }
 
     @Override

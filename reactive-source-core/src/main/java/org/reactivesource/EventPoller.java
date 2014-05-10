@@ -40,7 +40,7 @@ class EventPoller<T> implements Runnable {
                     pushNewEventsToEventChannel(eventSource.getNewEvents());
                     Thread.sleep(TIME_BETWEEN_POLLS);
                 } catch (InterruptedException ie) {
-                    logger.warn("The EventPoller thread was interrupted. The excecution will continue.", ie);
+                    logger.warn("The EventPoller thread was interrupted. The execution will continue.", ie);
                 } catch (DataAccessException dae) {
                     logger.warn("Could not get new events from EventSource.", dae);
                 }

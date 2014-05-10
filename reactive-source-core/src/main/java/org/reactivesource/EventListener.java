@@ -9,6 +9,16 @@ import java.util.Map;
 
 import static org.reactivesource.util.Assert.notNull;
 
+/**
+ * The {@link org.reactivesource.EventListener} is passed to a {@link org.reactivesource.ReactiveSource}. This way, for
+ * every new event that happens on the {@link org.reactivesource.ReactiveSource} the {@link #onEvent(Event)} method of
+ * the EventListener will be called.
+ * <p/>
+ * You only have to implement the {@link #onEvent(Event)} method with the functionality you desire for each event.
+ *
+ * @param <T> the class of the entities monitored from the {@link org.reactivesource.ReactiveSource}
+ * @see  org.reactivesource.ReactiveSource
+ */
 public abstract class EventListener<T> {
 
     private EntityExtractor<T> entityExtractor;
