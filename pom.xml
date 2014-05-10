@@ -4,8 +4,32 @@
 
     <groupId>org.reactivesource</groupId>
     <artifactId>reactive-source</artifactId>
-    <packaging>pom</packaging>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>reactive-source</name>
+    <description>Framework and tools that help the design of reactive data driven applications.</description>
+    <url>https://github.com/kstam/reactive-source</url>
+
+    <licenses>
+        <license>
+            <name>The MIT License (MIT)</name>
+            <url>https://github.com/kstam/reactive-source/blob/master/licence.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/kstam/reactive-source</url>
+        <connection>https://github.com/kstam/reactive-source</connection>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>kstam</id>
+            <name>Kostas Stamatoukos</name>
+            <email>kstamatoukos@ebay.com</email>
+        </developer>
+    </developers>
 
     <modules>
         <module>reactive-source-core</module>
