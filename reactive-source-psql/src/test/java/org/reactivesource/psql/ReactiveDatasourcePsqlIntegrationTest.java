@@ -5,10 +5,7 @@
  ******************************************************************************/
 package org.reactivesource.psql;
 
-import org.reactivesource.ConnectionProvider;
-import org.reactivesource.Event;
-import org.reactivesource.EventListener;
-import org.reactivesource.ReactiveDatasource;
+import org.reactivesource.*;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -35,7 +32,7 @@ public class ReactiveDatasourcePsqlIntegrationTest {
 
     @BeforeMethod(groups = INTEGRATION)
     public void setup() {
-        eventListener = spy(new MyEventListener());
+        eventListener = spy(new MyEventListener(new MyEntityExtractor()));
         cleanupDatabase();
     }
 
@@ -76,18 +73,7 @@ public class ReactiveDatasourcePsqlIntegrationTest {
         ReactiveDatasource<String> rds = new ReactiveDatasource<>(eventSource);
 
         // add new eventListener
-        rds.addEventListener(new EventListener<String>() {
-
-            @Override
-            public void onEvent(Event<String> event) {
-                System.out.println(event);
-            }
-
-            @Override
-            public String getEventObject(Map<String, Object> data) {
-                return data.toString();
-            }
-        });
+        rds.addEventListener(new MyEventListener(new MyEntityExtractor()));
         rds.start();
 
         // sleep enough to see it working
@@ -125,14 +111,20 @@ public class ReactiveDatasourcePsqlIntegrationTest {
 
     class MyEventListener extends EventListener<String> {
 
-        @Override
-        public void onEvent(Event<String> event) {
-            // do nothing
+        MyEventListener(MyEntityExtractor extractor) {
+            super(extractor);
         }
 
         @Override
-        public String getEventObject(Map<String, Object> data) {
-            return data.toString();
+        public void onEvent(Event<String> event) {
+            System.out.println(event);
+        }
+    }
+
+    class MyEntityExtractor implements EntityExtractor<String> {
+        @Override
+        public String extractEntity(Map<String, Object> entityRow) {
+            return entityRow.toString();
         }
     }
 }

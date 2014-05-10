@@ -26,25 +26,25 @@ public class EventListenerTest {
     private static Event<Map<String, Object>> eventOccured;
 
     private MyEventListener eventListener;
+    private MyEntityExtractor entityExtractor;
 
     @BeforeMethod(groups = SMALL)
     public void setUp() {
-        eventListener = spy(new MyEventListener());
-        Map<String, Object> mapDataNew = Maps.newHashMap();
-        mapDataNew.put("id", 1);
-        Map<String, Object> mapDataOld = Maps.newHashMap();
-        mapDataOld.put("id", 2);
-        eventOccured = new Event<>(EVENT_TYPE, TABLE_NAME, mapDataNew, mapDataOld);
+        entityExtractor = mock(MyEntityExtractor.class);
+        eventListener = spy(new MyEventListener(entityExtractor));
+        prepareMocks();
+    }
 
-        doReturn(MOCK_DATA_NEW).when(eventListener).getEventObject(mapDataNew);
-        doReturn(MOCK_DATA_OLD).when(eventListener).getEventObject(mapDataOld);
+    @Test(groups = SMALL, expectedExceptions = IllegalArgumentException.class)
+    public void testCanNotBeInitializedWithNullExtractor() {
+        new MyEventListener(null);
     }
 
     @Test(groups = SMALL)
     public void testNotifyEventCallsGetEventObject() {
         eventListener.notifyEvent(eventOccured);
-        verify(eventListener).getEventObject(eventOccured.getNewEntity());
-        verify(eventListener).getEventObject(eventOccured.getNewEntity());
+        verify(entityExtractor).extractEntity(eventOccured.getOldEntity());
+        verify(entityExtractor).extractEntity(eventOccured.getOldEntity());
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -63,14 +63,53 @@ public class EventListenerTest {
         assertEquals(producedEvent.getOldEntity(), MOCK_DATA_OLD);
     }
 
+    @Test(groups = SMALL)
+    public void stupidTest() {
+
+    }
+
+    class StudentEntityExtractor implements EntityExtractor<Student> {
+        public Student extractEntity(Map<String, Object> entityRow) {
+            long id = (Long) entityRow.get("id");
+            String name = (String) entityRow.get("name");
+            return new Student(id, name);
+        }
+    }
+
+    class Student {
+        private long id;
+        private String name;
+
+        Student(long id, String name) {
+
+            this.id = id;
+            this.name = name;
+        }
+    }
+    private void prepareMocks() {
+        Map<String, Object> mapDataNew = Maps.newHashMap();
+        mapDataNew.put("id", 1);
+        Map<String, Object> mapDataOld = Maps.newHashMap();
+        mapDataOld.put("id", 2);
+        eventOccured = new Event<>(EVENT_TYPE, TABLE_NAME, mapDataNew, mapDataOld);
+
+        when(entityExtractor.extractEntity(mapDataNew)).thenReturn(MOCK_DATA_NEW);
+        when(entityExtractor.extractEntity(mapDataOld)).thenReturn(MOCK_DATA_OLD);
+    }
+
+    private class MyEntityExtractor implements EntityExtractor<String> {
+        @Override public String extractEntity(Map<String, Object> data) {
+            return MOCK_DATA_NEW;
+        }
+    }
+
     private class MyEventListener extends EventListener<String> {
-        @Override
-        public void onEvent(Event<String> event) {
+        public MyEventListener(EntityExtractor<String> extractor) {
+            super(extractor);
         }
 
         @Override
-        public String getEventObject(Map<String, Object> data) {
-            return MOCK_DATA_NEW;
+        public void onEvent(Event<String> event) {
         }
     }
 }

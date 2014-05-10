@@ -6,10 +6,7 @@
 
 package org.reactivesource.mysql;
 
-import org.reactivesource.ConnectionProvider;
-import org.reactivesource.Event;
-import org.reactivesource.EventListener;
-import org.reactivesource.ReactiveDatasource;
+import org.reactivesource.*;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -36,7 +33,7 @@ public class ReactiveDatasourceMysqlIntegrationTest {
     @BeforeMethod(groups = INTEGRATION)
     public void setup() throws IOException, SQLException {
         new DbInitializer().setupDb();
-        eventListener = spy(new MyEventListener());
+        eventListener = spy(new MyEventListener(new MyEntityExtractor()));
         cleanupDatabase();
     }
 
@@ -72,32 +69,6 @@ public class ReactiveDatasourceMysqlIntegrationTest {
         verify(eventListener, times(2 * ENTITIES)).onEvent(any(Event.class));
     }
 
-//    @Test(groups = INTEGRATION, enabled = false)
-//    public void testManually() throws InterruptedException {
-//        PsqlEventSource eventSource = new PsqlEventSource(connectionProvider, TEST_TABLE_NAME);
-//        ReactiveDatasource<String> rds = new ReactiveDatasource<>(eventSource);
-//
-//        // add new eventListener
-//        rds.addEventListener(new EventListener<String>() {
-//
-//            @Override
-//            public void onEvent(Event<String> event) {
-//                System.out.println(event);
-//            }
-//
-//            @Override
-//            public String getEventObject(Map<String, Object> data) {
-//                return data.toString();
-//            }
-//        });
-//        rds.start();
-//
-//        // sleep enough to see it working
-//        sleep(600000L);
-//
-//        rds.stop();
-//    }
-
     private void insertNewRow(int id, String value) {
         try {
             Connection connection = connectionProvider.getConnection();
@@ -126,15 +97,19 @@ public class ReactiveDatasourceMysqlIntegrationTest {
     }
 
     class MyEventListener extends EventListener<String> {
-
+        public MyEventListener(MyEntityExtractor extractor) {
+            super(extractor);
+        }
         @Override
         public void onEvent(Event<String> event) {
             System.out.println(event);
         }
+    }
 
+    class MyEntityExtractor implements EntityExtractor<String> {
         @Override
-        public String getEventObject(Map<String, Object> data) {
-            return data.toString();
+        public String extractEntity(Map<String, Object> entityRow) {
+            return entityRow.toString();
         }
     }
 }
