@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.reactivesource.util.Assert.notNull;
 
-public class ReactiveDatasource<T> {
+public class ReactiveSource<T> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -19,17 +19,15 @@ public class ReactiveDatasource<T> {
     private EventPoller<T> eventPoller;
     private Thread pollerDaemon;
 
-    public ReactiveDatasource(EventSource eventSource) {
+    public ReactiveSource(EventSource eventSource) {
         this(eventSource, new EventChannel<T>());
     }
 
-    @VisibleForTesting
-    ReactiveDatasource(EventSource eventSource, EventChannel<T> eventChannel) {
-        this(eventChannel, new EventPoller<T>(eventSource, eventChannel));
+    @VisibleForTesting ReactiveSource(EventSource eventSource, EventChannel<T> eventChannel) {
+        this(eventChannel, new EventPoller<>(eventSource, eventChannel));
     }
 
-    @VisibleForTesting
-    ReactiveDatasource(EventChannel<T> eventChannel, EventPoller<T> eventPoller) {
+    @VisibleForTesting ReactiveSource(EventChannel<T> eventChannel, EventPoller<T> eventPoller) {
         super();
         logger.info("Initializing ReactiveDatasource");
         notNull(eventChannel, "eventChannel can not be null");
@@ -46,14 +44,14 @@ public class ReactiveDatasource<T> {
     }
 
     /**
-     * @return true if the {@link org.reactivesource.ReactiveDatasource} is started. Returns false if stopped.
+     * @return true if the {@link ReactiveSource} is started. Returns false if stopped.
      */
     public boolean isStarted() {
         return pollerDaemon != null;
     }
 
     /**
-     * Starts monitoring the {@link EventSource} associated with this {@link org.reactivesource.ReactiveDatasource}
+     * Starts monitoring the {@link EventSource} associated with this {@link ReactiveSource}
      */
     public void start() {
         if (!isStarted()) {
@@ -66,12 +64,12 @@ public class ReactiveDatasource<T> {
 
     /**
      * <p>
-     * Stops monitoring the {@link EventSource} associated with this {@link org.reactivesource.ReactiveDatasource}.
+     * Stops monitoring the {@link EventSource} associated with this {@link ReactiveSource}.
      * </p>
      *
      * <p>
-     * If you start the {@link org.reactivesource.ReactiveDatasource} again, any events that occurred in eventSource the between stopping
-     * the {@link org.reactivesource.ReactiveDatasource} and starting it again will be lost.
+     * If you start the {@link ReactiveSource} again, any events that occurred in eventSource the between stopping
+     * the {@link ReactiveSource} and starting it again will be lost.
      * </p>
      */
     public void stop() {

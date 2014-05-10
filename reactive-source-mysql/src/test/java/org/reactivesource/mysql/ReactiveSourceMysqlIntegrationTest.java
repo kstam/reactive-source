@@ -3,12 +3,14 @@
  *
  * See the file license.txt for copying permission.
  ******************************************************************************/
-package org.reactivesource.psql;
+
+package org.reactivesource.mysql;
 
 import org.reactivesource.*;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -19,39 +21,38 @@ import static java.lang.Thread.sleep;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 import static org.reactivesource.testing.TestConstants.*;
-import static org.reactivesource.psql.ConnectionConstants.*;
+import static org.reactivesource.mysql.ConnectionConstants.*;
 import static org.testng.Assert.*;
 
-public class ReactiveDatasourcePsqlIntegrationTest {
+public class ReactiveSourceMysqlIntegrationTest {
 
-    private static final String TEST_TABLE = TEST_TABLE_NAME;
-
-    ConnectionProvider connectionProvider = new PsqlConnectionProvider(PSQL_URL, USERNAME, PASSWORD);
+    ConnectionProvider connectionProvider = new MysqlConnectionProvider(URL, USERNAME, PASSWORD);
 
     MyEventListener eventListener;
 
     @BeforeMethod(groups = INTEGRATION)
-    public void setup() {
+    public void setup() throws IOException, SQLException {
+        new DbInitializer().setupDb();
         eventListener = spy(new MyEventListener(new MyEntityExtractor()));
         cleanupDatabase();
     }
 
     @SuppressWarnings("unchecked")
     @Test(groups = INTEGRATION)
-    public void testReactiveDatasourceBehaviorForPsqlEventSource() throws InterruptedException {
+    public void testReactiveDatasourceBehaviorForMysqlEventSource() throws InterruptedException {
         int ENTITIES = 10;
         // create new ReactiveEventSource
-        PsqlEventSource eventSource = new PsqlEventSource(connectionProvider, TEST_TABLE);
-        ReactiveDatasource<String> rds = new ReactiveDatasource<>(eventSource);
+        MysqlEventSource eventSource = new MysqlEventSource(connectionProvider, TEST_TABLE_NAME);
+        ReactiveSource<String> rds = new ReactiveSource<>(eventSource);
 
         // add new eventListener
         rds.addEventListener(eventListener);
         rds.start();
-        sleep(200L); //wait for the thread to be started
+        sleep(200L); //wait for the poller to start
 
         // insert new entities
         for (int i = 0; i < ENTITIES; i++) {
-            insertNewRow(i, "someValue" + i);
+            insertNewRow(i+1, "someValue" + i);
         }
 
         // wait for database to be queried and verify all the insertion events arrived
@@ -59,33 +60,19 @@ public class ReactiveDatasourcePsqlIntegrationTest {
         verify(eventListener, times(ENTITIES)).onEvent(any(Event.class));
 
         // stop the ReactiveDatasource
-        rds.stop();
-
-        // cleanup the database and make sure that none of the delete events will arrive
         cleanupDatabase();
         sleep(1000L);
-        verify(eventListener, times(ENTITIES)).onEvent(any(Event.class));
-    }
-
-    @Test(groups = INTEGRATION, enabled = false)
-    public void testManually() throws InterruptedException {
-        PsqlEventSource eventSource = new PsqlEventSource(connectionProvider, TEST_TABLE);
-        ReactiveDatasource<String> rds = new ReactiveDatasource<>(eventSource);
-
-        // add new eventListener
-        rds.addEventListener(new MyEventListener(new MyEntityExtractor()));
-        rds.start();
-
-        // sleep enough to see it working
-        sleep(600000L);
 
         rds.stop();
+        // cleanup the database and make sure that the delete events will arrive
+
+        verify(eventListener, times(2 * ENTITIES)).onEvent(any(Event.class));
     }
 
     private void insertNewRow(int id, String value) {
         try {
             Connection connection = connectionProvider.getConnection();
-            PreparedStatement stmt = connection.prepareStatement("INSERT INTO " + TEST_TABLE + " VALUES (?, ?)");
+            PreparedStatement stmt = connection.prepareStatement("INSERT INTO " + TEST_TABLE_NAME + " VALUES (?, ?)");
             stmt.setInt(1, id);
             stmt.setString(2, value);
             stmt.executeUpdate();
@@ -101,7 +88,7 @@ public class ReactiveDatasourcePsqlIntegrationTest {
         try {
             Connection connection = connectionProvider.getConnection();
             Statement stmt = connection.createStatement();
-            stmt.executeUpdate("DELETE FROM " + TEST_TABLE);
+            stmt.executeUpdate("DELETE FROM " + TEST_TABLE_NAME);
             stmt.close();
             connection.close();
         } catch (SQLException sqle) {
@@ -110,11 +97,9 @@ public class ReactiveDatasourcePsqlIntegrationTest {
     }
 
     class MyEventListener extends EventListener<String> {
-
-        MyEventListener(MyEntityExtractor extractor) {
+        public MyEventListener(MyEntityExtractor extractor) {
             super(extractor);
         }
-
         @Override
         public void onEvent(Event<String> event) {
             System.out.println(event);

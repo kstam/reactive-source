@@ -14,7 +14,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import static org.reactivesource.testing.TestConstants.*;
 import static org.testng.Assert.*;
 
-public class ReactiveDatasourceTest {
+public class ReactiveSourceTest {
 
     @Mock
     private EventChannel<Integer> channel;
@@ -23,49 +23,49 @@ public class ReactiveDatasourceTest {
     @Mock
     private EventPoller<Integer> poller;
 
-    private ReactiveDatasource<Integer> reactiveDatasource;
+    private ReactiveSource<Integer> reactiveSource;
 
     @BeforeMethod(groups = SMALL)
     public void setUp() {
         initMocks(this);
-        reactiveDatasource = new ReactiveDatasource<Integer>(channel, poller);
+        reactiveSource = new ReactiveSource<Integer>(channel, poller);
     }
 
     @Test(groups = SMALL, expectedExceptions = IllegalArgumentException.class)
     public void testCanNotBeInitializedWithNullEventSource() {
-        new ReactiveDatasource<Integer>(null);
+        new ReactiveSource<Integer>(null);
     }
 
     @Test(groups = SMALL, expectedExceptions = IllegalArgumentException.class)
     public void testCanNotAddANullEventListener() {
-        reactiveDatasource.addEventListener(null);
+        reactiveSource.addEventListener(null);
     }
 
     @Test(groups = SMALL)
     public void testAddingEventListenerAddsTheListenerToTheChannel() {
-        reactiveDatasource.addEventListener(listener);
+        reactiveSource.addEventListener(listener);
         verify(channel).addEventListener(listener);
     }
 
     @Test(groups = SMALL)
     public void testReactiveSourceIsNotStartedWhenInstantiated() {
-        assertFalse(reactiveDatasource.isStarted());
+        assertFalse(reactiveSource.isStarted());
     }
 
     @Test(groups = SMALL)
     public void testCanStartTheReactiveDatasource() {
-        reactiveDatasource.start();
-        assertTrue(reactiveDatasource.isStarted());
+        reactiveSource.start();
+        assertTrue(reactiveSource.isStarted());
     }
 
     @Test(groups = SMALL)
     public void testCanStopTheReactiveDatasource() throws InterruptedException {
-        reactiveDatasource.start();
-        assertTrue(reactiveDatasource.isStarted());
+        reactiveSource.start();
+        assertTrue(reactiveSource.isStarted());
 
-        reactiveDatasource.stop();
+        reactiveSource.stop();
         verify(poller).stop();
         Thread.sleep(100L);
-        assertFalse(reactiveDatasource.isStarted());
+        assertFalse(reactiveSource.isStarted());
     }
 }
