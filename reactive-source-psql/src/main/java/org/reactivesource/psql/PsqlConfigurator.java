@@ -91,53 +91,6 @@ class PsqlConfigurator {
         }
     }
 
-    void dropNotifyFunction() {
-        logger.info("Dropping {} function if noone else needs it", FUNCTION_NAME);
-        if (!isNotifyFunctionCreated()) {
-            return;
-        }
-        Statement stmt = null;
-        try (Connection connection = connectionProvider.getConnection()) {
-            stmt = connection.createStatement();
-            stmt.executeUpdate(PsqlQueryGenerator.generateDropProcQuery(FUNCTION_NAME));
-        } catch (SQLException e) {
-            throw new ConfigurationException("Couldn't drop notifyFunction", e);
-        } finally {
-            closeStatement(stmt);
-        }
-    }
-
-    void dropTrigger() {
-        logger.info("Dropping trigger '{}' for table '{}' and stream '{}'", triggerName, tableName, streamName);
-        Statement stmt = null;
-        try (Connection connection = connectionProvider.getConnection()) {
-            stmt = connection.createStatement();
-            stmt.executeUpdate(PsqlQueryGenerator.generateDropTriggerQuery(triggerName, tableName));
-        } catch (SQLException e) {
-            throw new ConfigurationException("Couldn't drop trigger", e);
-        } finally {
-            closeStatement(stmt);
-        }
-    }
-
-    private boolean isNotifyFunctionCreated() {
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        try (Connection connection = connectionProvider.getConnection()) {
-            stmt = connection.prepareStatement(GET_PROC_QUERY);
-            stmt.setString(1, FUNCTION_NAME);
-
-            rs = stmt.executeQuery();
-
-            return rs.next();
-        } catch (SQLException e) {
-            throw new ConfigurationException("Configuration error! Couldn't check the existance of " + FUNCTION_NAME, e);
-        } finally {
-            closeResultset(rs);
-            closeStatement(stmt);
-        }
-    }
-
     private boolean isTriggerCreated() {
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -166,11 +119,6 @@ class PsqlConfigurator {
             throw new ConfigurationException("Couldn't read function file.", e);
         }
     }
-
-    private static final String GET_PROC_QUERY = "SELECT proname "
-            + "FROM pg_catalog.pg_namespace n "
-            + "JOIN pg_catalog.pg_proc p ON pronamespace = n.oid"
-            + " WHERE nspname = current_schema() and proname = ?";
 
     private static final String GET_TRIGGER_QUERY = "SELECT t.tgname, c.relname AS table_name "
             + "FROM pg_trigger t "

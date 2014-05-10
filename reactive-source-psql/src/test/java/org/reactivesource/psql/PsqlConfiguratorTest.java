@@ -19,7 +19,7 @@ public class PsqlConfiguratorTest {
     @Mock
     private ConnectionProvider connectionProvider;
 
-    @BeforeMethod(groups = INTEGRATION)
+    @BeforeMethod(groups = SMALL)
     public void setup() {
         initMocks(this);
     }

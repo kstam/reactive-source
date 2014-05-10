@@ -20,7 +20,7 @@
 			</run>
 		</groups>
 		<packages>
-			<package name="org.reactivesource.org.reactivesource.psql.*"></package>
+            <package name="org.reactivesource.psql.*"></package>
 		</packages>
  	</test>
 </suite>

@@ -82,10 +82,7 @@ public class PsqlConfiguratorIntegrationTest {
 
             rs = stmt.executeQuery();
 
-            if (!rs.next()) {
-                return false;
-            }
-            return true;
+            return rs.next();
         } catch (SQLException e) {
             throw new DataAccessException("", e);
         } finally {
@@ -104,10 +101,7 @@ public class PsqlConfiguratorIntegrationTest {
 
             rs = stmt.executeQuery();
 
-            if (!rs.next()) {
-                return false;
-            }
-            return true;
+            return rs.next();
         } catch (SQLException e) {
             throw new DataAccessException("", e);
         } finally {
@@ -118,28 +112,24 @@ public class PsqlConfiguratorIntegrationTest {
 
     private void dropTrigger(String triggerName, String tableName) {
         Statement stmt = null;
-        ResultSet rs = null;
         try (Connection connection = connectionProvider.getConnection()) {
             stmt = connection.createStatement();
             stmt.executeUpdate(PsqlQueryGenerator.generateDropTriggerQuery(triggerName, tableName));
         } catch (SQLException e) {
             throw new ConfigurationException("Couldn't drop trigger", e);
         } finally {
-            closeResultset(rs);
             closeStatement(stmt);
         }
     }
 
     private void dropProc(String procName) {
         Statement stmt = null;
-        ResultSet rs = null;
         try (Connection connection = connectionProvider.getConnection()) {
             stmt = connection.createStatement();
             stmt.executeUpdate(PsqlQueryGenerator.generateDropProcQuery(procName));
         } catch (SQLException e) {
             throw new ConfigurationException("Couldn't drop notifyFunction", e);
         } finally {
-            closeResultset(rs);
             closeStatement(stmt);
         }
     }
