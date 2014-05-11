@@ -44,7 +44,7 @@ class MysqlConfigurator {
             stmt.execute(updateTrigger.getCreateSql());
             stmt.execute(deleteTrigger.getCreateSql());
         } catch (SQLException sqle) {
-            throw new ConfigurationException("Couldn't configure table " + tableName + " as a reactive source", sqle);
+            throw new ConfigurationException("Couldn't setup " + tableName + " triggers for ReactiveSource", sqle);
         }
     }
 
@@ -69,7 +69,7 @@ class MysqlConfigurator {
             }
 
         } catch (SQLException sqle) {
-            throw new ConfigurationException("Couldn't configure table " + tableName + " as a reactive source", sqle);
+            throw new ConfigurationException("Couldn't cleanup " + tableName + " reactive source triggers", sqle);
         }
     }
 }
