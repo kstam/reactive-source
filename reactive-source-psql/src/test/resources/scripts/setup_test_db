@@ -10,7 +10,8 @@ TEST_USER="test"
 TEST_SCHEMA="test"
 TEST_USER_PASS="password"
 TEST_TABLE="test"
-TEST_STREAM="test_trigger"
+STREAM_NAME="$TEST_TABLE"_"reactivesource"
+TRIGGER_NAME="$STREAM_NAME"_"trigger"
 
 start_message() {
   local answer
@@ -20,11 +21,10 @@ cat << EOF
 This script will do the following:
 * Create a new database [$TEST_DATABASE]
 * Create a new user [$TEST_USER] with pasword [$TEST_USER_PASS]
-* Setup the notify_with_json procedure
 * Create a new schema [$TEST_SCHEMA]
 * Create a new table on this schema [$TEST_TABLE]
-* Create a trigger which will notify the stream [$TEST_STREAM] for every
-  update in the table [$TEST_TABLE].
+* Setup the notify_with_json procedure
+* Create a trigger [$TRIGGER_NAME] that pushes events from the table[$TEST_TABLE] to the stream[$STREAM_NAME]
 
 You have selected the following params for connection:
 SERVER: $SERVER:$PORT
@@ -48,6 +48,8 @@ fi
 
 start_message
 
+create_pgpass_file
+
 echo "Creating test database [$TEST_DATABASE] and user [$TEST_USER]/[$TEST_USER_PASS]"
 psql -h $SERVER -p $PORT -U $USERNAME -d $DATABASE -f "$DIR/create-db-and-user.sql"
 verifyLastCommand "Failed to create database and/or user"
@@ -55,6 +57,9 @@ verifyLastCommand "Failed to create database and/or user"
 echo "Starting rest of scripts with test user"
 USERNAME=$TEST_USER
 DATABASE=$TEST_DATABASE
+PASSWORD="password"
+
+create_pgpass_file
 
 echo "Creating schema and tables in the test database"
 psql -h $SERVER -p $PORT -U $USERNAME -d $DATABASE -f "$DIR/init-db.sql"
@@ -64,3 +69,6 @@ echo "Setting up triggers"
 setup_notifications $SERVER $PORT $DATABASE $USERNAME $TEST_TABLE $TEST_STREAM
 
 echo "SUCCESS!"
+
+delete_pgpass_file
+

@@ -18,25 +18,25 @@ setup_notifications () {
   local DATABASE=$3
   local USERNAME=$4
   local TABLE_NAME=$5
-  local STREAM_NAME=$6
-  local TRIGGER_NAME="$TABLE_NAME"_"$STREAM_NAME"
+  local STREAM_NAME="$TABLE_NAME"_"reactivesource"
+  local TRIGGER_NAME="$STREAM_NAME"_"trigger"
 
   #make sure 'notify_with_json()' procedure is there
   create_notify_with_json $SERVER $PORT $DATABASE $USERNAME
   verifyLastCommand "FAILURE! The notify_with_json() was not installed. Make sure you provided the correct parameters."
-
-  #drop old trigger for this table/stream if any exists
-  psql -h $SERVER -p $PORT -U $USERNAME -d $DATABASE -c \
-    "DROP TRIGGER IF EXISTS $TRIGGER_NAME ON $TABLE_NAME"
-  verifyLastCommand "FAILURE! Couldnt drop old trigger."
+  echo "Successfully Created notify_with_json() function"
 
   #setup a new trigger that calls the notify_with_json() procedure
   psql -h $SERVER -p $PORT -U $USERNAME -d $DATABASE -c \
     "CREATE TRIGGER $TRIGGER_NAME AFTER INSERT OR UPDATE OR DELETE ON $TABLE_NAME FOR EACH ROW EXECUTE PROCEDURE notify_with_json('$STREAM_NAME')"
-  verifyLastCommand "FAILURE! The trigger was not setup for table[$TABLE_NAME] and stream[$STREAM_NAME]. Check your parameters and try again."
-
-  echo "Created trigger for table [$TABLE_NAME] which fires events in stream [$STREAM_NAME]."
-  echo "Trigger name ($TRIGGER_NAME)"
+  if [ $? -ne 0 ]
+  then
+    echo "A reactive trigger with the name [$TRIGGER_NAME] already exists for table [$TABLE_NAME]. Since it can be in use we will not replace it."
+    echo "If you are certain, DROP the trigger and run the script again"
+  else
+    echo "Created trigger for table [$TABLE_NAME] which fires events in stream [$STREAM_NAME]."
+    echo "Trigger name ($TRIGGER_NAME)"
+  fi
 }
 
 show_message () {
@@ -45,8 +45,6 @@ show_message () {
   local DATABASE=$3
   local USERNAME=$4
   local TABLE_NAME=$5
-  local STREAM_NAME=$6
-  local TRIGGER_NAME=$7
   local answer
 
 cat << EOF
@@ -61,7 +59,6 @@ SERVER:       "$SERVER:$PORT"
 DATABASE:     "$DATABASE"
 USERNAME:     "$USERNAME"
 TABLE_NAME:   "$TABLE_NAME"
-TRIGGER_NAME: "$TRIGGER_NAME"
 -----------------------------------------------------------------------
 EOF
   
@@ -92,8 +89,12 @@ if [ "${1}" != "--source-only" ]; then
     exit 1
   fi
 
-  show_message $SERVER $PORT $DATABASE $USERNAME $TABLE_NAME $STREAM_NAME "$TABLE_NAME"_"$STREAM_NAME"
+  show_message $SERVER $PORT $DATABASE $USERNAME $TABLE_NAME
 
+  create_pgpass_file
   # call create stream
-  setup_notifications $SERVER $PORT $DATABASE $USERNAME $TABLE_NAME $STREAM_NAME
+  setup_notifications $SERVER $PORT $DATABASE $USERNAME $TABLE_NAME
+
+  delete_pgpass_file
+
 fi
