@@ -7,8 +7,9 @@
 package org.reactivesource.mysql;
 
 import org.reactivesource.ConnectionProvider;
-import org.reactivesource.util.JdbcUtils;
+import org.reactivesource.EventType;
 import org.reactivesource.exceptions.ConfigurationException;
+import org.reactivesource.util.JdbcUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -16,8 +17,10 @@ import java.io.IOException;
 import java.sql.*;
 
 import static org.mockito.Mockito.*;
-import static org.reactivesource.testing.TestConstants.*;
 import static org.reactivesource.mysql.ConnectionConstants.*;
+import static org.reactivesource.testing.DateConstants.TODAY;
+import static org.reactivesource.testing.TestConstants.INTEGRATION;
+import static org.reactivesource.testing.TestConstants.SMALL;
 import static org.testng.Assert.*;
 
 public class MysqlConfiguratorTest {
@@ -86,12 +89,8 @@ public class MysqlConfiguratorTest {
     }
 
     @Test(groups = SMALL, expectedExceptions = ConfigurationException.class)
-    public void testThrowsConfigurationExceptionWhenSqlExceptionOccures() throws SQLException {
-        ConnectionProvider mockedProvider = mock(ConnectionProvider.class);
-        Connection mockedConnection = mock(Connection.class);
-
-        when(mockedProvider.getConnection()).thenReturn(mockedConnection);
-        when(mockedConnection.createStatement()).thenThrow(new SQLException());
+    public void testSetupThrowsConfigurationExceptionWhenSqlExceptionOccures() throws SQLException {
+        ConnectionProvider mockedProvider = getProviderReturningExceptionThrowingConnections();
 
         MysqlConfigurator configurator = new MysqlConfigurator(mockedProvider, TEST_TABLE_NAME);
         configurator.setup();
@@ -107,6 +106,15 @@ public class MysqlConfiguratorTest {
         insertToTestTable(1, "value");
 
         assertEquals(getEventsCount(), initialEventsCount);
+    }
+
+    @Test(groups = SMALL, expectedExceptions = ConfigurationException.class)
+    public void testCleanupThrowsConfigurationExceptionWhenSqlExceptionOccures() throws SQLException {
+        ConnectionProvider mockedProvider = getProviderReturningExceptionThrowingConnections();
+
+        MysqlConfigurator configurator = new MysqlConfigurator(mockedProvider, TEST_TABLE_NAME);
+
+        configurator.cleanup();
     }
 
     @Test(groups = INTEGRATION)
@@ -126,6 +134,69 @@ public class MysqlConfiguratorTest {
         insertToTestTable(1, "value");
 
         assertEquals(getEventsCount(), initialEventsCount + 1);
+    }
+
+    @Test(groups = INTEGRATION)
+    public void testInitReactiveTablesCreatesTheReactiveSchemaTablesIfTheyDoNotExist() throws SQLException {
+        cleanupSchema();
+        MysqlConfigurator configurator = new MysqlConfigurator(provider, TEST_TABLE_NAME);
+
+        configurator.initReactiveTables();
+
+        Connection connection = provider.getConnection();
+        JdbcUtils.sql(connection, "SELECT * FROM " + MysqlEventRepo.TABLE_NAME);
+        JdbcUtils.sql(connection, "SELECT * FROM " + ListenerRepo.TABLE_NAME);
+        JdbcUtils.closeConnection(connection);
+    }
+
+    @Test(groups = INTEGRATION)
+    public void testInitReactiveTablesDoesNotOverrideTablesIfTheyAlreadyExist() throws SQLException {
+        Connection connection = provider.getConnection();
+        ListenerRepo listenerRepo = new ListenerRepo();
+
+        //tables are there from BeforeMethod. Insert some values.
+        listenerRepo.insert(new Listener(TEST_TABLE_NAME), connection);
+        MysqlEventRepoTest
+                .insertEvent(new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", TODAY), connection);
+
+        MysqlConfigurator configurator = new MysqlConfigurator(provider, TEST_TABLE_NAME);
+
+        configurator.initReactiveTables();
+
+        //verify the tables where not overwritten
+        assertEquals(listenerRepo.findByTableName(TEST_TABLE_NAME, connection).size(), 1);
+        assertEquals(getEventsCount(), 1);
+
+        JdbcUtils.closeConnection(connection);
+    }
+
+    @Test(groups = SMALL, expectedExceptions = ConfigurationException.class)
+    public void testInitReactiveTablesThrowsConfigurationExceptionIfSQLExceptionOccurs() throws SQLException {
+        ConnectionProvider mockedProvider = getProviderReturningExceptionThrowingConnections();
+
+        MysqlConfigurator configurator = new MysqlConfigurator(mockedProvider, TEST_TABLE_NAME);
+
+        configurator.initReactiveTables();
+    }
+
+    private ConnectionProvider getProviderReturningExceptionThrowingConnections() throws SQLException {
+        ConnectionProvider mockedProvider = mock(ConnectionProvider.class);
+        Connection mockedConnection = mock(Connection.class);
+
+        when(mockedProvider.getConnection()).thenReturn(mockedConnection);
+        when(mockedConnection.createStatement()).thenThrow(new SQLException());
+        return mockedProvider;
+    }
+
+
+    private void cleanupSchema() throws SQLException {
+        try (
+                Connection connection = provider.getConnection();
+                Statement stmt = connection.createStatement()
+        ) {
+            stmt.execute("DROP TABLE IF EXISTS " + MysqlEventRepo.TABLE_NAME);
+            stmt.execute("DROP TABLE IF EXISTS " + ListenerRepo.TABLE_NAME);
+        }
     }
 
     private void deleteTestValue(int id) throws SQLException {

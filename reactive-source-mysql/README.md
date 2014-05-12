@@ -9,8 +9,13 @@ Creating A MysqlEventSource
 
 You can create a MysqlEventSource in the following way:
 
-    MysqlEventSource eventSource = new MysqlEventSource(connectionProvider, TABLE_NAME);
-    MysqlEventSource eventSource2 = new MysqlEventSource(URL, USERNAME, PASSWORD, TEST_TABLE_NAME);
+    MysqlEventSource eventSource1 = new MysqlEventSource(connectionProvider, TABLE_NAME);
+    MysqlEventSource eventSource2 = new MysqlEventSource(connectionProvider, TABLE_NAME, AUTO_CONFIGURE);
+
+    MysqlEventSource eventSource3 = new MysqlEventSource(URL, USERNAME, PASSWORD, TEST_TABLE_NAME);
+    MysqlEventSource eventSource4 = new MysqlEventSource(URL, USERNAME, PASSWORD, TEST_TABLE_NAME, AUTO_CONFIGURE);
+
+_Note_: AUTO_CONFIGURE defaults to **false** when not specified.
 
 User Privileges for MysqlEventSource
 --------
@@ -26,6 +31,12 @@ The user you connect to the MysqlEventSource with should also have the following
 - UPDATE
 - SELECT
 - DELETE
+
+### Only when auto-config is activated
+If you **enable auto-confire** you need to make sure the user also has the following privileges on the REACTIVE tables:
+
+- CREATE (used for creating the reactive tables if they are not there)
+- EVENT (used for scheduled cleanup event)
 
 ### Why do I need these privileges?
 

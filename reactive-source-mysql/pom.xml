@@ -35,15 +35,14 @@
             <artifactId>reactive-source-core</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
         <!-- TEST -->
         <dependency>
             <groupId>org.reactivesource</groupId>
             <artifactId>common-testing-utils</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
