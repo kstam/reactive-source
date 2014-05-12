@@ -20,7 +20,7 @@ import static org.testng.Assert.*;
 public class EventListenerTest {
 
     private static final String TABLE_NAME = "tableName";
-    private static final String EVENT_TYPE = "eventType";
+    private static final EventType EVENT_TYPE = EventType.INSERT;
     private static final String MOCK_DATA_NEW = "mockedDataNew";
     private static final String MOCK_DATA_OLD = "mockedDataOld";
     private static Event<Map<String, Object>> eventOccured;
@@ -63,29 +63,6 @@ public class EventListenerTest {
         assertEquals(producedEvent.getOldEntity(), MOCK_DATA_OLD);
     }
 
-    @Test(groups = SMALL)
-    public void stupidTest() {
-
-    }
-
-    class StudentEntityExtractor implements EntityExtractor<Student> {
-        public Student extractEntity(Map<String, Object> entityRow) {
-            long id = (Long) entityRow.get("id");
-            String name = (String) entityRow.get("name");
-            return new Student(id, name);
-        }
-    }
-
-    class Student {
-        private long id;
-        private String name;
-
-        Student(long id, String name) {
-
-            this.id = id;
-            this.name = name;
-        }
-    }
     private void prepareMocks() {
         Map<String, Object> mapDataNew = Maps.newHashMap();
         mapDataNew.put("id", 1);

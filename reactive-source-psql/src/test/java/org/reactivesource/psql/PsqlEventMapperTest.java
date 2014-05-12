@@ -8,6 +8,7 @@ package org.reactivesource.psql;
 
 import com.beust.jcommander.internal.Maps;
 import org.reactivesource.Event;
+import org.reactivesource.EventType;
 import org.testng.annotations.Test;
 
 import java.util.Map;
@@ -85,7 +86,7 @@ public class PsqlEventMapperTest {
         expectedOldEntity.put("value", "abc");
 
         Event<Map<String, Object>> event = mapper.parseResponse(JSON_CORRECT_RESPONSE);
-        assertEquals(event.getEventType(), Event.UPDATE_TYPE);
+        assertEquals(event.getEventType(), EventType.UPDATE);
         assertEquals(event.getEntityName(), "test");
         assertEquals(event.getNewEntity(), expectedNewEntity);
         assertEquals(event.getOldEntity(), expectedOldEntity);

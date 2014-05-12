@@ -13,6 +13,7 @@ import org.postgresql.PGNotification;
 import org.reactivesource.ConnectionProvider;
 import org.reactivesource.Event;
 import org.reactivesource.EventSource;
+import org.reactivesource.EventType;
 import org.reactivesource.exceptions.DataAccessException;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -206,7 +207,7 @@ public class PsqlEventSourceTest {
         assertEquals(newEvents.size(), 1);
 
         Event<Map<String, Object>> event = newEvents.get(0);
-        assertEquals(event.getEventType(), "INSERT");
+        assertEquals(event.getEventType(), EventType.INSERT);
         assertEquals(event.getEntityName(), "aTable");
         assertEquals(event.getNewEntity().get("a"), "b");
         assertEquals(event.getOldEntity(), new HashMap<String, String>());

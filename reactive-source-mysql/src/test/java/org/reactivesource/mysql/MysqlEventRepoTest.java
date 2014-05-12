@@ -7,8 +7,9 @@
 package org.reactivesource.mysql;
 
 import org.apache.commons.lang.time.DateUtils;
-import org.reactivesource.util.JdbcUtils;
+import org.reactivesource.EventType;
 import org.reactivesource.exceptions.DataAccessException;
+import org.reactivesource.util.JdbcUtils;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -20,10 +21,10 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
-import static org.reactivesource.Event.INSERT_TYPE;
-import static org.reactivesource.testing.DateConstants.TODAY;
-import static org.reactivesource.testing.TestConstants.*;
 import static org.reactivesource.mysql.ConnectionConstants.*;
+import static org.reactivesource.testing.DateConstants.TODAY;
+import static org.reactivesource.testing.TestConstants.INTEGRATION;
+import static org.reactivesource.testing.TestConstants.SMALL;
 import static org.testng.Assert.*;
 
 public class MysqlEventRepoTest {
@@ -66,17 +67,25 @@ public class MysqlEventRepoTest {
         List<MysqlEvent> newEvents = repo.getNewEventsForListener(listener, connection);
         assertTrue(newEvents.isEmpty());
 
-        insertEvent(new MysqlEvent(1, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", new Date()), connection);
+        MysqlEvent event = new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", TODAY);
+        insertEvent(event, connection);
 
         newEvents = repo.getNewEventsForListener(listener, connection);
         assertEquals(newEvents.size(), 1);
+
+        MysqlEvent newEvent = newEvents.get(0);
+        assertEquals(newEvent.getEventId(), event.getEventId());
+        assertEquals(newEvent.getEntityName(), event.getEntityName());
+        assertEquals(newEvent.getOldEntity(), event.getOldEntity());
+        assertEquals(newEvent.getNewEntity(), event.getNewEntity());
+        assertEquals(newEvent.getEventType(), event.getEventType());
     }
 
     @Test(groups = INTEGRATION)
     public void testDoesNotReturnEventsThatWereCreatedBeforeTheListenerLastCheck()
             throws SQLException, InterruptedException {
         //event was there
-        insertEvent(new MysqlEvent(1, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", new Date()), connection);
+        insertEvent(new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", new Date()), connection);
 
         //listener was created later
         Thread.sleep(1000L);
@@ -91,7 +100,7 @@ public class MysqlEventRepoTest {
     @Test(groups = INTEGRATION)
     public void testNeverReturnsAPreviousReturnedEventTwice() throws SQLException {
        for (int i = 0; i < 100; i++) {
-            final MysqlEvent event = new MysqlEvent(i + 1, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", new Date());
+            final MysqlEvent event = new MysqlEvent(i + 1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", new Date());
             insertEvent(event, connection);
             List<MysqlEvent> events = repo.getNewEventsForListener(listener, connection);
 
@@ -112,10 +121,10 @@ public class MysqlEventRepoTest {
 
     @Test(groups = INTEGRATION)
     public void testReturnsEventsOrderedByDateAndThenEventId() throws SQLException {
-        MysqlEvent event1 = new MysqlEvent(1, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", DateUtils.addDays(TODAY, 2));
-        MysqlEvent event2 = new MysqlEvent(2, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", DateUtils.addDays(TODAY, 2));
-        MysqlEvent event3 = new MysqlEvent(3, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", DateUtils.addDays(TODAY, 1));
-        MysqlEvent event4 = new MysqlEvent(4, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", DateUtils.addDays(TODAY, 3));
+        MysqlEvent event1 = new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", DateUtils.addDays(TODAY, 2));
+        MysqlEvent event2 = new MysqlEvent(2, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", DateUtils.addDays(TODAY, 2));
+        MysqlEvent event3 = new MysqlEvent(3, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", DateUtils.addDays(TODAY, 1));
+        MysqlEvent event4 = new MysqlEvent(4, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", DateUtils.addDays(TODAY, 3));
 
         insertEventWithDate(event2, connection);
         insertEventWithDate(event1, connection);
@@ -138,7 +147,7 @@ public class MysqlEventRepoTest {
         ) {
             stmt.setLong(1, event.getEventId());
             stmt.setString(2, event.getEntityName());
-            stmt.setString(3, event.getEventType());
+            stmt.setObject(3, event.getEventType().getValue());
             stmt.setObject(4, event.getOldEntity());
             stmt.setObject(5, event.getNewEntity());
 
@@ -152,7 +161,7 @@ public class MysqlEventRepoTest {
         ) {
             stmt.setLong(1, event.getEventId());
             stmt.setString(2, event.getEntityName());
-            stmt.setString(3, event.getEventType());
+            stmt.setObject(3, event.getEventType().getValue());
             stmt.setObject(4, event.getOldEntity());
             stmt.setObject(5, event.getNewEntity());
             stmt.setObject(6, event.getCreatedDt());

@@ -8,6 +8,7 @@ package org.reactivesource.mysql;
 
 import com.google.common.base.Objects;
 import org.reactivesource.Event;
+import org.reactivesource.EventType;
 
 import java.util.Date;
 
@@ -19,7 +20,7 @@ class MysqlEvent extends Event<String> {
     private final long eventId;
     private final Date createdDt;
 
-    MysqlEvent(long eventId, String tableName, String eventType, String oldEntity, String newEntity,
+    MysqlEvent(long eventId, String tableName, EventType eventType, String oldEntity, String newEntity,
                Date createdDt) {
 
         super(eventType, tableName, newEntity, oldEntity);

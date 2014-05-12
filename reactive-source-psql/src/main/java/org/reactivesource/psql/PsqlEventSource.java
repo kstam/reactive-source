@@ -27,6 +27,9 @@ import static java.lang.String.format;
 import static org.reactivesource.util.Assert.notNull;
 import static org.reactivesource.util.Assert.state;
 
+/**
+ * Implementation of EventSource for a PostgreSQL database
+ */
 public class PsqlEventSource implements EventSource {
 
     private static final String ERROR_MSG_ILLEGALSTATE = "Called getNewEvents before calling connect";

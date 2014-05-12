@@ -7,6 +7,7 @@
 package org.reactivesource.mysql;
 
 import org.reactivesource.ConnectionProvider;
+import org.reactivesource.EventType;
 import org.reactivesource.util.JdbcUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -22,10 +23,11 @@ import java.util.List;
 import static com.google.common.collect.Lists.newArrayList;
 import static junit.framework.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
-import static org.reactivesource.testing.TestConstants.*;
 import static org.reactivesource.mysql.ConnectionConstants.*;
 import static org.reactivesource.mysql.ListenerRepo.extractListener;
 import static org.reactivesource.mysql.MysqlEventRepoTest.insertEvent;
+import static org.reactivesource.testing.TestConstants.INTEGRATION;
+import static org.reactivesource.testing.TestConstants.SMALL;
 import static org.testng.Assert.*;
 
 public class MysqlEventSourceTest {
@@ -99,7 +101,7 @@ public class MysqlEventSourceTest {
     @Test(groups = INTEGRATION)
     public void testGetNewEventsFetchesAllNewEvents() throws SQLException {
         MysqlEventSource eventSource = new MysqlEventSource(provider, TEST_TABLE_NAME);
-        MysqlEvent event = new MysqlEvent(1L, TEST_TABLE_NAME, "INSERT", "{}", "{}", new Date());
+        MysqlEvent event = new MysqlEvent(1L, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", new Date());
 
         Connection connection = provider.getConnection();
         insertEvent(event, connection);

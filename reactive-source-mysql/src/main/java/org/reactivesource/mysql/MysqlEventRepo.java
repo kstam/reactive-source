@@ -7,6 +7,7 @@
 package org.reactivesource.mysql;
 
 import com.google.common.collect.Lists;
+import org.reactivesource.EventType;
 import org.reactivesource.exceptions.DataAccessException;
 
 import java.sql.Connection;
@@ -25,7 +26,6 @@ class MysqlEventRepo {
     static final String OLD_ENTITY_COL = "OLD_ENTITY";
     static final String NEW_ENTITY_COL = "NEW_ENTITY";
     static final String CREATED_DT_COL = "CREATED_DT";
-
 
     private final ListenerRepo listenerRepo;
 
@@ -67,8 +67,9 @@ class MysqlEventRepo {
 
     static MysqlEvent extractEvent(ResultSet rs) throws SQLException {
         Date createdDt = new Date(rs.getTimestamp(CREATED_DT_COL).getTime());
-        return new MysqlEvent(rs.getLong(EVENT_ID_COL), rs.getString(TABLE_NAME_COL), rs.getString(EVENT_TYPE_COL),
-                rs.getString(OLD_ENTITY_COL), rs.getString(NEW_ENTITY_COL), createdDt);
+        return new MysqlEvent(rs.getLong(EVENT_ID_COL), rs.getString(TABLE_NAME_COL),
+                EventType.forValue(rs.getString(EVENT_TYPE_COL)), rs.getString(OLD_ENTITY_COL),
+                rs.getString(NEW_ENTITY_COL), createdDt);
     }
 
     private void verifyListenerExists(Listener listener, Connection connection) {

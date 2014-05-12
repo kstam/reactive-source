@@ -10,8 +10,8 @@ import com.google.common.annotations.VisibleForTesting;
 import org.reactivesource.ConnectionProvider;
 import org.reactivesource.Event;
 import org.reactivesource.EventSource;
-import org.reactivesource.util.JdbcUtils;
 import org.reactivesource.exceptions.DataAccessException;
+import org.reactivesource.util.JdbcUtils;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.sql.Connection;
@@ -23,6 +23,9 @@ import static com.google.common.collect.Lists.newArrayList;
 import static org.reactivesource.util.Assert.hasText;
 import static org.reactivesource.util.Assert.notNull;
 
+/**
+ * Implementation of EventSource for Mysql database tables
+ */
 @NotThreadSafe
 public class MysqlEventSource implements EventSource {
 

@@ -27,17 +27,13 @@ import static org.reactivesource.util.Assert.notNull;
 
 public class Event<T> {
 
-    public static final String UPDATE_TYPE = "UPDATE";
-    public static final String INSERT_TYPE = "INSERT";
-    public static final String DELETE_TYPE = "DELETE";
-
-    protected final String eventType;
+    protected final EventType eventType;
     protected final String entityName;
     protected final T oldEntity;
     protected final T newEntity;
 
-    public Event(String eventType, String entityName, T newEntity, T oldEntity) {
-        hasText(eventType, "eventType can not be null or empty");
+    public Event(EventType eventType, String entityName, T newEntity, T oldEntity) {
+        notNull(eventType, "eventType can not be null");
         hasText(entityName, "tableName can not be null or empty");
         notNull(newEntity, "eventData can not be null");
         notNull(oldEntity, "eventData can not be null");
@@ -47,7 +43,7 @@ public class Event<T> {
         this.oldEntity = oldEntity;
     }
 
-    public String getEventType() {
+    public EventType getEventType() {
         return eventType;
     }
 

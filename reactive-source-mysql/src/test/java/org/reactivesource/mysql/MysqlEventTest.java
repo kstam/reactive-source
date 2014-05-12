@@ -6,10 +6,9 @@
 
 package org.reactivesource.mysql;
 
-import org.reactivesource.testing.DateConstants;
+import org.reactivesource.EventType;
 import org.testng.annotations.Test;
 
-import static org.reactivesource.Event.INSERT_TYPE;
 import static org.reactivesource.mysql.ConnectionConstants.TEST_TABLE_NAME;
 import static org.reactivesource.testing.DateConstants.TODAY;
 import static org.reactivesource.testing.DateConstants.YESTERDAY;
@@ -20,19 +19,19 @@ public class MysqlEventTest {
 
     @Test(groups = SMALL, expectedExceptions = IllegalArgumentException.class)
     public void testCanNotBeInitializedWithNegativeEventId() {
-        new MysqlEvent(-1, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", TODAY);
+        new MysqlEvent(-1, TEST_TABLE_NAME, EventType.DELETE, "{}", "{}", TODAY);
     }
 
     @Test(groups = SMALL, expectedExceptions = IllegalArgumentException.class)
     public void testCanNotBeInitializedWithNullDate() {
-        new MysqlEvent(1, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", null);
+        new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", null);
     }
 
     @Test(groups = SMALL)
     public void testEqualsForSameObject() {
-        MysqlEvent event1 = new MysqlEvent(1, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", TODAY);
-        MysqlEvent event2 = new MysqlEvent(1, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", TODAY);
-        MysqlEvent event3 = new MysqlEvent(1, TEST_TABLE_NAME, INSERT_TYPE, "{}", "{}", YESTERDAY);
+        MysqlEvent event1 = new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", TODAY);
+        MysqlEvent event2 = new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", TODAY);
+        MysqlEvent event3 = new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", YESTERDAY);
 
         assertEquals(event1, event1);
         assertEquals(event1, event2);
