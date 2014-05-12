@@ -10,6 +10,27 @@ Creating A MysqlEventSource
 You can create a MysqlEventSource in the following way:
 
     MysqlEventSource eventSource = new MysqlEventSource(connectionProvider, TABLE_NAME);
+    MysqlEventSource eventSource2 = new MysqlEventSource(URL, USERNAME, PASSWORD, TEST_TABLE_NAME);
+
+User Privileges for MysqlEventSource
+--------
+In order the MysqlEventSource to work properly you must connect with a user that has the following privileges on the
+monitored tables:
+
+- TRIGGER
+
+The user you connect to the MysqlEventSource with should also have the following privileges on the REACTIVE tables
+(REACTIVE_LISTENER and REACTIVE_EVENT):
+
+- INSERT
+- UPDATE
+- SELECT
+- DELETE
+
+### Why do I need these privileges?
+
+MySQL doesn't natively support LISTEN/NOTIFY functionality. This framework is taking care of that for you, but in order
+to do so, it needs to create triggers on the monitored tables.
 
 Checking out and building the project
 --------

@@ -44,6 +44,11 @@ public class MysqlEventSourceTest {
         assertNotNull(new MysqlEventSource(mock(ConnectionProvider.class), TEST_TABLE_NAME));
     }
 
+    @Test(groups = SMALL)
+    public void testCanBeInitializedWithConnectionParams() {
+        assertNotNull(new MysqlEventSource(URL, USERNAME, PASSWORD, TEST_TABLE_NAME));
+    }
+
     @Test(groups = SMALL, expectedExceptions = IllegalArgumentException.class)
     public void testCanNotBeInitializedWithNullConnectionProvider() {
         new MysqlEventSource(null, TEST_TABLE_NAME);
