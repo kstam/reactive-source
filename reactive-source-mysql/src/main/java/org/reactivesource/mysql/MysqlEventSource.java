@@ -61,7 +61,8 @@ public class MysqlEventSource implements EventSource {
         this(new MysqlConnectionProvider(url, username, password), tableName, autoConfigure);
     }
 
-    @VisibleForTesting MysqlEventSource(ConnectionProvider connectionProvider, String tableName,
+    @VisibleForTesting
+    MysqlEventSource(ConnectionProvider connectionProvider, String tableName,
                                         MysqlConfigurator configurator, boolean autoConfigure) {
 
         notNull(connectionProvider, "Connection Provider can not be null");

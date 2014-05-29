@@ -12,7 +12,6 @@ import org.reactivesource.util.JdbcUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,14 +30,14 @@ import static org.reactivesource.mysql.ListenerRepo.extractListener;
 import static org.reactivesource.mysql.MysqlEventRepoTest.insertEvent;
 import static org.reactivesource.testing.TestConstants.INTEGRATION;
 import static org.reactivesource.testing.TestConstants.SMALL;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 public class MysqlEventSourceTest {
 
     ConnectionProvider provider = new MysqlConnectionProvider(URL, USERNAME, PASSWORD);
 
     @BeforeMethod(groups = INTEGRATION)
-    public void setup() throws IOException, SQLException {
+    public void setup() {
         new DbInitializer().setupDb();
     }
 

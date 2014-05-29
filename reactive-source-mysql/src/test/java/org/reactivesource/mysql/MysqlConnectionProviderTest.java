@@ -9,8 +9,8 @@ package org.reactivesource.mysql;
 import org.reactivesource.exceptions.DataAccessException;
 import org.testng.annotations.Test;
 
-import static org.reactivesource.testing.TestConstants.*;
 import static org.reactivesource.mysql.ConnectionConstants.*;
+import static org.reactivesource.testing.TestConstants.INTEGRATION;
 import static org.testng.Assert.*;
 
 /**

@@ -12,12 +12,11 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.sql.*;
 import java.util.List;
 
-import static org.reactivesource.testing.TestConstants.*;
 import static org.reactivesource.mysql.ConnectionConstants.*;
+import static org.reactivesource.testing.TestConstants.INTEGRATION;
 
 /**
  * Created by kstamatoukos on 4/7/14.
@@ -33,7 +32,7 @@ public class ReactiveTriggerIntegrationTest {
     }
 
     @BeforeMethod(groups = INTEGRATION)
-    public void setupDb() throws IOException, SQLException {
+    public void setupDb() {
         new DbInitializer().setupDb();
     }
 

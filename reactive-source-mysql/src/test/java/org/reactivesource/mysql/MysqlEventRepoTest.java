@@ -14,7 +14,6 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -36,7 +35,7 @@ public class MysqlEventRepoTest {
     private Listener listener;
 
     @BeforeMethod(groups = INTEGRATION)
-    public void setup() throws IOException, SQLException {
+    public void setup() {
         new DbInitializer().setupDb();
         MysqlConnectionProvider provider = new MysqlConnectionProvider(URL, USERNAME, PASSWORD);
         repo = new MysqlEventRepo();
@@ -99,7 +98,7 @@ public class MysqlEventRepoTest {
 
     @Test(groups = INTEGRATION)
     public void testNeverReturnsAPreviousReturnedEventTwice() throws SQLException {
-       for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 100; i++) {
             final MysqlEvent event = new MysqlEvent(i + 1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", new Date());
             insertEvent(event, connection);
             List<MysqlEvent> events = repo.getNewEventsForListener(listener, connection);
@@ -121,10 +120,14 @@ public class MysqlEventRepoTest {
 
     @Test(groups = INTEGRATION)
     public void testReturnsEventsOrderedByDateAndThenEventId() throws SQLException {
-        MysqlEvent event1 = new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", DateUtils.addDays(TODAY, 2));
-        MysqlEvent event2 = new MysqlEvent(2, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", DateUtils.addDays(TODAY, 2));
-        MysqlEvent event3 = new MysqlEvent(3, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", DateUtils.addDays(TODAY, 1));
-        MysqlEvent event4 = new MysqlEvent(4, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", DateUtils.addDays(TODAY, 3));
+        MysqlEvent event1 = new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}",
+                DateUtils.addDays(TODAY, 2));
+        MysqlEvent event2 = new MysqlEvent(2, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}",
+                DateUtils.addDays(TODAY, 2));
+        MysqlEvent event3 = new MysqlEvent(3, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}",
+                DateUtils.addDays(TODAY, 1));
+        MysqlEvent event4 = new MysqlEvent(4, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}",
+                DateUtils.addDays(TODAY, 3));
 
         insertEventWithDate(event2, connection);
         insertEventWithDate(event1, connection);

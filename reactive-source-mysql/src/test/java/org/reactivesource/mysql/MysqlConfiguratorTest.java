@@ -13,7 +13,6 @@ import org.reactivesource.util.JdbcUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.sql.*;
 
 import static org.mockito.Mockito.*;
@@ -33,7 +32,7 @@ public class MysqlConfiguratorTest {
     private ConnectionProvider provider;
 
     @BeforeMethod(groups = INTEGRATION)
-    public void setup() throws IOException, SQLException {
+    public void setup() {
         new DbInitializer().setupDb();
         provider = new MysqlConnectionProvider(URL, USERNAME, PASSWORD);
     }
@@ -187,7 +186,6 @@ public class MysqlConfiguratorTest {
         when(mockedConnection.createStatement()).thenThrow(new SQLException());
         return mockedProvider;
     }
-
 
     private void cleanupSchema() throws SQLException {
         try (

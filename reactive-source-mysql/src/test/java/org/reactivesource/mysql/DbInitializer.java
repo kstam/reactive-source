@@ -17,11 +17,15 @@ import static org.reactivesource.mysql.ConnectionConstants.*;
 
 public class DbInitializer {
 
-    public void setupDb() throws SQLException, IOException {
-        Connection connection = new MysqlConnectionProvider(URL, USERNAME, PASSWORD).getConnection();
-        String query = IOUtils.toString(getClass().getResourceAsStream("create-test-schema.sql"));
-        JdbcUtils.sql(connection, query);
-        query = IOUtils.toString(getClass().getResourceAsStream("create-reactive-schema.sql"));
-        JdbcUtils.sql(connection, query);
+    public void setupDb() {
+        try {
+            Connection connection = new MysqlConnectionProvider(URL, USERNAME, PASSWORD).getConnection();
+            String query = IOUtils.toString(getClass().getResourceAsStream("create-test-schema.sql"));
+            JdbcUtils.sql(connection, query);
+            query = IOUtils.toString(getClass().getResourceAsStream("create-reactive-schema.sql"));
+            JdbcUtils.sql(connection, query);
+        } catch (SQLException | IOException e) {
+            throw new RuntimeException("Failed to setup db.", e);
+        }
     }
 }

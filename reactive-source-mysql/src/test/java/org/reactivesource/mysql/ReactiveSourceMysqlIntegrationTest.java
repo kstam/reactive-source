@@ -10,7 +10,6 @@ import org.reactivesource.*;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -20,8 +19,8 @@ import java.util.Map;
 import static java.lang.Thread.sleep;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
-import static org.reactivesource.testing.TestConstants.*;
 import static org.reactivesource.mysql.ConnectionConstants.*;
+import static org.reactivesource.testing.TestConstants.INTEGRATION;
 import static org.testng.Assert.*;
 
 public class ReactiveSourceMysqlIntegrationTest {
@@ -31,7 +30,7 @@ public class ReactiveSourceMysqlIntegrationTest {
     MyEventListener eventListener;
 
     @BeforeMethod(groups = INTEGRATION)
-    public void setup() throws IOException, SQLException {
+    public void setup() {
         new DbInitializer().setupDb();
         eventListener = spy(new MyEventListener(new MyEntityExtractor()));
         cleanupDatabase();
@@ -52,7 +51,7 @@ public class ReactiveSourceMysqlIntegrationTest {
 
         // insert new entities
         for (int i = 0; i < ENTITIES; i++) {
-            insertNewRow(i+1, "someValue" + i);
+            insertNewRow(i + 1, "someValue" + i);
         }
 
         // wait for database to be queried and verify all the insertion events arrived
@@ -100,6 +99,7 @@ public class ReactiveSourceMysqlIntegrationTest {
         public MyEventListener(MyEntityExtractor extractor) {
             super(extractor);
         }
+
         @Override
         public void onEvent(Event<String> event) {
             System.out.println(event);

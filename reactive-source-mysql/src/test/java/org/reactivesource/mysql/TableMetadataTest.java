@@ -19,8 +19,9 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.reactivesource.testing.TestConstants.*;
 import static org.reactivesource.mysql.ConnectionConstants.*;
+import static org.reactivesource.testing.TestConstants.INTEGRATION;
+import static org.reactivesource.testing.TestConstants.SMALL;
 import static org.testng.Assert.*;
 
 public class TableMetadataTest {
