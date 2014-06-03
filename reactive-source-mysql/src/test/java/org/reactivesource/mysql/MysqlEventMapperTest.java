@@ -7,6 +7,7 @@
 package org.reactivesource.mysql;
 
 import org.reactivesource.Event;
+import org.reactivesource.EventType;
 import org.testng.annotations.Test;
 
 import java.util.Date;
@@ -19,7 +20,7 @@ public class MysqlEventMapperTest {
     @Test(groups = SMALL)
     public void testCorrectlyMapsAMysqlToAnEventWithAMapForOldAndNewEntities() {
         MysqlEventMapper mapper = new MysqlEventMapper();
-        MysqlEvent mysqlEvent = new MysqlEvent(1, "tableName", "INSERT", "{}", "{'key':'value'}", new Date());
+        MysqlEvent mysqlEvent = new MysqlEvent(1, "tableName", EventType.INSERT, "{}", "{'key':'value'}", new Date());
         Event<Map<String, Object>> genericEvent = mapper.mapToGenericEvent(mysqlEvent);
 
         assertEquals(genericEvent.getEventType(), mysqlEvent.getEventType());

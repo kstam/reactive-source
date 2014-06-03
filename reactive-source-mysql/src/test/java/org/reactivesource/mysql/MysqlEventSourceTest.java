@@ -7,6 +7,7 @@
 package org.reactivesource.mysql;
 
 import org.reactivesource.ConnectionProvider;
+import org.reactivesource.EventType;
 import org.reactivesource.util.JdbcUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -20,12 +21,16 @@ import java.util.Date;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 import static org.mockito.Mockito.*;
-import static org.reactivesource.testing.TestConstants.*;
 import static org.reactivesource.mysql.ConnectionConstants.*;
+import static org.reactivesource.mysql.ListenerRepo.TABLE_NAME;
 import static org.reactivesource.mysql.ListenerRepo.extractListener;
 import static org.reactivesource.mysql.MysqlEventRepoTest.insertEvent;
+import static org.reactivesource.testing.TestConstants.INTEGRATION;
+import static org.reactivesource.testing.TestConstants.SMALL;
 import static org.testng.Assert.*;
 
 public class MysqlEventSourceTest {
@@ -42,6 +47,11 @@ public class MysqlEventSourceTest {
         assertNotNull(new MysqlEventSource(mock(ConnectionProvider.class), TEST_TABLE_NAME));
     }
 
+    @Test(groups = SMALL)
+    public void testCanBeInitializedWithConnectionParams() {
+        assertNotNull(new MysqlEventSource(URL, USERNAME, PASSWORD, TEST_TABLE_NAME));
+    }
+
     @Test(groups = SMALL, expectedExceptions = IllegalArgumentException.class)
     public void testCanNotBeInitializedWithNullConnectionProvider() {
         new MysqlEventSource(null, TEST_TABLE_NAME);
@@ -56,6 +66,18 @@ public class MysqlEventSourceTest {
     public void testCallingGetNewEventsWithoutCallingConnectThrowsException() {
         MysqlEventSource eventSource = new MysqlEventSource(provider, TEST_TABLE_NAME);
         eventSource.getNewEvents();
+    }
+
+    @Test(groups = SMALL)
+    public void testAutoConfigurationDefaultsToFalseWhenNotSpecified() {
+        assertFalse(new MysqlEventSource(provider, TEST_TABLE_NAME).isAutoConfigure());
+        assertFalse(new MysqlEventSource(URL, USERNAME, PASSWORD, TABLE_NAME).isAutoConfigure());
+    }
+
+    @Test(groups = SMALL)
+    public void testAutoConfigurationIsSetToTrueWhenSpecified() {
+        assertTrue(new MysqlEventSource(provider, TEST_TABLE_NAME, true).isAutoConfigure());
+        assertTrue(new MysqlEventSource(URL, USERNAME, PASSWORD, TABLE_NAME, true).isAutoConfigure());
     }
 
     @Test(groups = INTEGRATION)
@@ -99,13 +121,14 @@ public class MysqlEventSourceTest {
     @Test(groups = INTEGRATION)
     public void testGetNewEventsFetchesAllNewEvents() throws SQLException {
         MysqlEventSource eventSource = new MysqlEventSource(provider, TEST_TABLE_NAME);
-        MysqlEvent event = new MysqlEvent(1L, TEST_TABLE_NAME, "INSERT", "{}", "{}", new Date());
+        MysqlEvent event = new MysqlEvent(1L, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", new Date());
+
+        eventSource.connect();
 
         Connection connection = provider.getConnection();
         insertEvent(event, connection);
         JdbcUtils.closeConnection(connection);
 
-        eventSource.connect();
         List events = eventSource.getNewEvents();
 
         assertEquals(events.size(), 1);
@@ -149,7 +172,7 @@ public class MysqlEventSourceTest {
     public void testSetupCallsTheSetupMethodOfTheConfigurator() {
         MysqlConfigurator mockedConfigurator = mock(MysqlConfigurator.class);
 
-        MysqlEventSource eventSource = new MysqlEventSource(provider, TEST_TABLE_NAME, mockedConfigurator);
+        MysqlEventSource eventSource = new MysqlEventSource(provider, TEST_TABLE_NAME, mockedConfigurator, false);
 
         eventSource.setup();
 
@@ -160,11 +183,33 @@ public class MysqlEventSourceTest {
     public void testSetupCallsTheCleanupMethodOfTheConfigurator() {
         MysqlConfigurator mockedConfigurator = mock(MysqlConfigurator.class);
 
-        MysqlEventSource eventSource = new MysqlEventSource(provider, TEST_TABLE_NAME, mockedConfigurator);
+        MysqlEventSource eventSource = new MysqlEventSource(provider, TEST_TABLE_NAME, mockedConfigurator, false);
 
         eventSource.cleanup();
 
         verify(mockedConfigurator).cleanup();
+    }
+
+    @Test(groups = SMALL)
+    public void testSetupCallsTheInitReactiveTablesOfTheConfiguratorWhenAutoConfigureIsTrue() {
+        MysqlConfigurator mockedConfigurator = mock(MysqlConfigurator.class);
+        MysqlEventSource eventSource = new MysqlEventSource(provider, TEST_TABLE_NAME, mockedConfigurator, true);
+
+        eventSource.setup();
+
+        verify(mockedConfigurator).initReactiveTables();
+        verify(mockedConfigurator).setup();
+    }
+
+    @Test(groups = SMALL)
+    public void testSetupDoesNotCallTheInitReactiveTablesOfTheConfiguratorWhenAutoConfigureIsFalse() {
+        MysqlConfigurator mockedConfigurator = mock(MysqlConfigurator.class);
+        MysqlEventSource eventSource = new MysqlEventSource(provider, TEST_TABLE_NAME, mockedConfigurator, false);
+
+        eventSource.setup();
+
+        verify(mockedConfigurator, never()).initReactiveTables();
+        verify(mockedConfigurator).setup();
     }
 
     private List<Listener> listAllListeners() throws SQLException {

@@ -15,7 +15,7 @@ import org.testng.annotations.Test;
 import java.util.Map;
 
 import static org.mockito.Mockito.*;
-import static org.reactivesource.testing.TestConstants.*;
+import static org.reactivesource.testing.TestConstants.SMALL;
 import static org.testng.Assert.*;
 
 @SuppressWarnings("unchecked")
@@ -34,8 +34,8 @@ public class EventChannelTest {
         MockitoAnnotations.initMocks(this);
 
         Map<String, Object> dummyEntity = Maps.newHashMap();
-        dummyInternalEvent = new Event<Map<String, Object>>("type", "entity", dummyEntity, dummyEntity);
-        channel = new EventChannel<Integer>();
+        dummyInternalEvent = new Event<>(EventType.DELETE, "entity", dummyEntity, dummyEntity);
+        channel = new EventChannel<>();
     }
 
     @Test(groups = SMALL, expectedExceptions = IllegalArgumentException.class)

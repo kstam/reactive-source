@@ -9,13 +9,13 @@ package org.reactivesource.psql;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.reactivesource.Event;
+import org.reactivesource.EventType;
 
 import java.util.Map;
 
-import static org.reactivesource.util.JsonParserUtils.jsonObjectToMap;
 import static org.reactivesource.psql.PsqlPayloadConstants.*;
-import static org.reactivesource.util.Assert.isTrue;
 import static org.reactivesource.util.Assert.notNull;
+import static org.reactivesource.util.JsonParserUtils.jsonObjectToMap;
 
 class PsqlEventMapper {
 
@@ -25,13 +25,14 @@ class PsqlEventMapper {
 
     /**
      * Parses a notification payload into an {@link Event} object
+     *
      * @param responsePayload
      * @return an {@link Event} object for which the entities are represented as a {@link java.util.Map}&lt;{@link String},{@link Object}&gt;
      */
     Event<Map<String, Object>> parseResponse(String responsePayload) {
         try {
             JSONObject jsonResponse = new JSONObject(responsePayload);
-            String eventType = jsonResponse.getString(EVENT_TYPE_KEY);
+            EventType eventType = EventType.forValue(jsonResponse.getString(EVENT_TYPE_KEY));
             String tableName = jsonResponse.getString(TABLE_NAME_KEY);
             Map<String, Object> newRow = jsonObjectToMap(jsonResponse.getJSONObject(NEW_ENTITY_KEY));
             Map<String, Object> oldRow = jsonObjectToMap(jsonResponse.getJSONObject(OLD_ENTITY_KEY));
@@ -49,7 +50,7 @@ class PsqlEventMapper {
     private void validateEvent(Event<Map<String, Object>> event) {
         try {
             notNull(event, "Event was null");
-            isTrue(PsqlEventType.contains(event.getEventType()), "Invalid eventType: " + event.getEventType());
+            notNull(event.getEventType(), "EventType was null");
             notNull(event.getEntityName(), "Entity name was null.");
             notNull(event.getNewEntity(), "New entity was null");
             notNull(event.getOldEntity(), "Old entity was null");

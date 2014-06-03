@@ -40,17 +40,17 @@ public class EventPollerTest {
 
     @Test(groups = SMALL, expectedExceptions = IllegalArgumentException.class)
     public void testCanNotBeInitializedWithNullEventSource() {
-        new EventPoller<Integer>(null, channel);
+        new EventPoller<>(null, channel);
     }
 
     @Test(groups = SMALL, expectedExceptions = IllegalArgumentException.class)
     public void testCanNotBeInitializedWithNullListenersList() {
-        new EventPoller<Integer>(evtSource, null);
+        new EventPoller<>(evtSource, null);
     }
 
     @Test(groups = SMALL)
     public void testCanBeInitializedWithCorrectArguments() {
-        assertNotNull(new EventPoller<Integer>(evtSource, channel));
+        assertNotNull(new EventPoller<>(evtSource, channel));
     }
 
     @Test(groups = SMALL)

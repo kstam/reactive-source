@@ -33,5 +33,5 @@ import java.util.Map;
  * @param <T> the class of the model object of the entity
  */
 public interface EntityExtractor<T> {
-    T extractEntity(Map<String, Object> entityRow);
+    public T extractEntity(Map<String, Object> entityRow);
 }

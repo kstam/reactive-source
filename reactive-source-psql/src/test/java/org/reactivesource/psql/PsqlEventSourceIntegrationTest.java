@@ -7,6 +7,7 @@
 package org.reactivesource.psql;
 
 import org.reactivesource.Event;
+import org.reactivesource.EventType;
 import org.reactivesource.exceptions.DataAccessException;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -69,7 +70,7 @@ public class PsqlEventSourceIntegrationTest {
         assertEquals(newEvents.size(), 1);
         Event<Map<String, Object>> event = newEvents.get(0);
         assertEquals(event.getEntityName(), TEST_TABLE);
-        assertEquals(event.getEventType(), "INSERT");
+        assertEquals(event.getEventType(), EventType.INSERT);
     }
 
     @Test(groups = INTEGRATION)
@@ -86,7 +87,7 @@ public class PsqlEventSourceIntegrationTest {
 
         Event<Map<String, Object>> event = newEvents.get(0);
         assertEquals(event.getEntityName(), TEST_TABLE);
-        assertEquals(event.getEventType(), "INSERT");
+        assertEquals(event.getEventType(), EventType.INSERT);
     }
 
     private void insertNewRow(int id, String value) {

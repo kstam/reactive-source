@@ -9,6 +9,12 @@ Creating A PsqlEventSource
 
 You can create a PsqlEventSource in any of the following ways:
 
+    PsqlEventSource eventSource1 = new PsqlEventSource(DB_URL, USERNAME, PASSWORD, TABLE_NAME);
+    PsqlEventSource eventSource2 = new PsqlEventSource(connectionProvider, TABLE_NAME);
+
+    PsqlEventSource eventSource3 = new PsqlEventSource(DB_URL, USERNAME, PASSWORD, TABLE_NAME, AUTO_CONFIG);
+    PsqlEventSource eventSource4 = new PsqlEventSource(connectionProvider, TABLE_NAME, AUTO_CONFIG);
+
 
 Auto Configuration mode
 -------
@@ -41,30 +47,46 @@ In that case, it is your responsibility to setup the database accordingly.
 
 Specifically, you will need to:
 - install the notify_with_json() stored procedure in your psql server.
--
+- setup appropriate trigger for the table you want to monitor
+
+We have created some scripts to help you do that.
+
+Specifically in the directory src/main/resources/scripts you will find some scripts that help you setup a table very fast.
+
+_Example:_
+
+    $ ./setup_notifications -u USERNAME -p PASSWORD -h hostname -P PORT_NR -d DATABASE -t TABLE_NAME
+
+The command above will configure the given table for use with the ReactiveSource framework and make sure all that is needed
+is in place.
 
 
-Want to contribute? Checking out and building the project
+Checking out and building the project
 --------
 
 You will need to setup a local instance of a PostgreSQL database for the integration test to get executed.
 
-Once you have installed a local instance of PostgreSQL, you will need to create the test database and user that are needed for the tests to run.
+##### Setup database for the tests
 
-Checkout the code. Under the directory {CODE_DIR}/src/test/resources/scipts/psql you will find 2 sql. You only need the one named **create-db-and-user.sql**.
+To help you configure your database for running the tests we have created a small script that does it for you.
 
-So the steps are:
+You can find the script at src/test/resources/scripts/setup_test_db
 
-1. Run the **create-db-and-user.sql** file with a user that has the privilege to create Databases and Roles.
+You will need to run the script as a superuser in order to setup everything correctly
 
-    `
-    psql -h localhost -U <USERNAME> -d <EXISTING_DB_NAME> -f create-db-and-user.sql
-    `
+_Example_
 
-2. Build the project. While on {CODE_DIR} run
+    $ ./setup_test_db -u SUPERUSER -p PASSWORD -h localhost
 
-    `
-    mvn clean package
-    `
+this will setup your db for running the tests.
 
-Thats all!
+##### Build the project
+
+The project is built with maven
+
+under the parent directory run
+
+    mvn clean install
+
+And thats all :)
+
