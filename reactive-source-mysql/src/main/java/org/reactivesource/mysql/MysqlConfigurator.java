@@ -6,6 +6,7 @@
 
 package org.reactivesource.mysql;
 
+import com.google.common.collect.Lists;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException;
 import org.apache.commons.io.IOUtils;
 import org.reactivesource.ConnectionProvider;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
@@ -28,6 +30,7 @@ import static org.reactivesource.util.Assert.hasText;
  */
 class MysqlConfigurator {
 
+    public static final String TABLE_NAME_NULL = "tableName can not be null or empty";
     private final TableMetadata tableMetadata;
     private final ConnectionProvider connectionProvider;
     private final String tableName;
@@ -35,7 +38,7 @@ class MysqlConfigurator {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public MysqlConfigurator(ConnectionProvider connectionProvider, String tableName) {
-        hasText(tableName, "tableName can not be null or empty");
+        hasText(tableName, TABLE_NAME_NULL);
 
         this.connectionProvider = connectionProvider;
         this.tableName = tableName;
@@ -46,20 +49,21 @@ class MysqlConfigurator {
      * Will create the triggers that are required for the ReactiveSource framework to function.
      */
     public void createTriggers() {
-        try (
-                Connection connection = connectionProvider.getConnection();
-                Statement stmt = connection.createStatement()
-        ) {
+        try (Connection connection = connectionProvider.getConnection()) {
             List<String> tableColumnNames = tableMetadata.getColumnNames(tableName);
-            ReactiveTrigger insertTrigger = ReactiveTriggerFactory.afterInsert(tableName, tableColumnNames);
-            ReactiveTrigger updateTrigger = ReactiveTriggerFactory.afterUpdate(tableName, tableColumnNames);
-            ReactiveTrigger deleteTrigger = ReactiveTriggerFactory.afterDelete(tableName, tableColumnNames);
+            List<ReactiveTrigger> triggersToCreate = Lists.newArrayList(
+                    ReactiveTriggerFactory.afterInsert(tableName, tableColumnNames),
+                    ReactiveTriggerFactory.afterUpdate(tableName, tableColumnNames),
+                    ReactiveTriggerFactory.afterDelete(tableName, tableColumnNames));
 
-            stmt.execute(insertTrigger.getCreateSql());
-            stmt.execute(updateTrigger.getCreateSql());
-            stmt.execute(deleteTrigger.getCreateSql());
+            createTriggers(triggersToCreate, connection);
+
         } catch (MySQLSyntaxErrorException msee) {
-            logger.info("Triggers already existed. Skipping trigger creation.");
+            logger.error("Could not create triggers for the table [{}]. If you are using a MySQL version < 5.7 " +
+                    "make sure there is no other trigger with the same trigger_time and trigger_event. Otherwise " +
+                    "consider upgrading to the latest MySQL version.", tableName);
+            throw new ConfigurationException("Couldn't setup triggers for ReactiveSource table [" + tableName + "]",
+                    msee);
         } catch (SQLException sqle) {
             logger.error("Couldn't setup triggers for ReactiveSource table [{}]", tableName);
             throw new ConfigurationException("Couldn't setup triggers for ReactiveSource table [" + tableName + "]",
@@ -111,6 +115,36 @@ class MysqlConfigurator {
         } catch (SQLException | IOException e) {
             throw new ConfigurationException("Couldn't cleanup " + tableName + " reactive source triggers", e);
         }
+    }
+
+    private void createTriggers(List<ReactiveTrigger> triggersToCreate, Connection connection) throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            for (ReactiveTrigger trigger : triggersToCreate) {
+                if (!triggerExists(trigger, connection)) {
+                    logSkipCreationMessage(trigger);
+                    stmt.execute(trigger.getCreateSql());
+                }
+            }
+        }
+    }
+
+    private boolean triggerExists(ReactiveTrigger trigger, Connection connection) throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery("SHOW TRIGGERS LIKE '" + trigger.getTriggerTable() + "'");
+
+            while(rs.next()) {
+                String triggerName = rs.getString("Trigger");
+                if (triggerName.equals(trigger.getTriggerName())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    private void logSkipCreationMessage(ReactiveTrigger trigger) {
+        logger.info("An {} {} trigger for table [{}] with the same name exists. Skipping creation.",
+                trigger.getTriggerTime(), trigger.getTriggerEvent(), trigger.getTriggerTable());
     }
 
     private boolean reactiveTablesExist(Connection connection) {
