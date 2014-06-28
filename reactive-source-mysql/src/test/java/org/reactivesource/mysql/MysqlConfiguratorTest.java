@@ -49,9 +49,9 @@ public class MysqlConfiguratorTest {
     }
 
     @Test(groups = INTEGRATION)
-    public void testSetupCreatesInsertTrigger() throws SQLException {
+    public void testCreateTriggersCreatesInsertTrigger() throws SQLException {
         MysqlConfigurator configurator = new MysqlConfigurator(provider, TEST_TABLE_NAME);
-        configurator.setup();
+        configurator.createTriggers();
 
         int initialEventsCount = getEventsCount();
         insertToTestTable(1, "value");
@@ -60,12 +60,12 @@ public class MysqlConfiguratorTest {
     }
 
     @Test(groups = INTEGRATION)
-    public void testSetupCreatesUpdateTrigger() throws SQLException {
+    public void testCreateTriggersCreatesUpdateTrigger() throws SQLException {
         MysqlConfigurator configurator = new MysqlConfigurator(provider, TEST_TABLE_NAME);
 
         insertToTestTable(1, "value");
 
-        configurator.setup();
+        configurator.createTriggers();
 
         int initialEventsCount = getEventsCount();
         updateTestValue(1, "value2");
@@ -74,12 +74,12 @@ public class MysqlConfiguratorTest {
     }
 
     @Test(groups = INTEGRATION)
-    public void testSetupCreatesDeleteTrigger() throws SQLException {
+    public void testCreateTriggersCreatesDeleteTrigger() throws SQLException {
         MysqlConfigurator configurator = new MysqlConfigurator(provider, TEST_TABLE_NAME);
 
         insertToTestTable(1, "value");
 
-        configurator.setup();
+        configurator.createTriggers();
 
         int initialEventsCount = getEventsCount();
         deleteTestValue(1);
@@ -88,18 +88,18 @@ public class MysqlConfiguratorTest {
     }
 
     @Test(groups = SMALL, expectedExceptions = ConfigurationException.class)
-    public void testSetupThrowsConfigurationExceptionWhenSqlExceptionOccures() throws SQLException {
+    public void testCreateTriggersThrowsConfigurationExceptionWhenSqlExceptionOccures() throws SQLException {
         ConnectionProvider mockedProvider = getProviderReturningExceptionThrowingConnections();
 
         MysqlConfigurator configurator = new MysqlConfigurator(mockedProvider, TEST_TABLE_NAME);
-        configurator.setup();
+        configurator.createTriggers();
     }
 
     @Test(groups = INTEGRATION)
-    public void testCleanupRemovesTheTriggersIfThereIsNoOtherListenerForThisTable() throws SQLException {
+    public void testCleanupTriggersRemovesTheTriggersIfThereIsNoOtherListenerForThisTable() throws SQLException {
         MysqlConfigurator configurator = new MysqlConfigurator(provider, TEST_TABLE_NAME);
-        configurator.setup();
-        configurator.cleanup();
+        configurator.createTriggers();
+        configurator.cleanupTriggers();
 
         int initialEventsCount = getEventsCount();
         insertToTestTable(1, "value");
@@ -108,10 +108,10 @@ public class MysqlConfiguratorTest {
     }
 
     @Test(groups = INTEGRATION)
-    public void testSetupDoesntFailIfTriggersAlreadyExistForTheGivenTable() throws SQLException {
+    public void testCreateTriggersDoesntFailIfTriggersAlreadyExistForTheGivenTable() throws SQLException {
         MysqlConfigurator configurator = new MysqlConfigurator(provider, TEST_TABLE_NAME);
-        configurator.setup();
-        configurator.setup();
+        configurator.createTriggers();
+        configurator.createTriggers();
 
         int initialEventsCount = getEventsCount();
         insertToTestTable(1, "value");
@@ -120,16 +120,16 @@ public class MysqlConfiguratorTest {
     }
 
     @Test(groups = SMALL, expectedExceptions = ConfigurationException.class)
-    public void testCleanupThrowsConfigurationExceptionWhenSqlExceptionOccures() throws SQLException {
+    public void testCleanupTriggersThrowsConfigurationExceptionWhenSqlExceptionOccures() throws SQLException {
         ConnectionProvider mockedProvider = getProviderReturningExceptionThrowingConnections();
 
         MysqlConfigurator configurator = new MysqlConfigurator(mockedProvider, TEST_TABLE_NAME);
 
-        configurator.cleanup();
+        configurator.cleanupTriggers();
     }
 
     @Test(groups = INTEGRATION)
-    public void testCleanupDoesNotRemoveTheTriggersIfThereAreOtherListenersForThisTable() throws SQLException {
+    public void testCleanupTriggersTriggersDoesNotRemoveTheTriggersIfThereAreOtherListenersForThisTable() throws SQLException {
         Listener listener = new Listener(TEST_TABLE_NAME);
         ListenerRepo listenerRepo = new ListenerRepo();
 
@@ -138,8 +138,8 @@ public class MysqlConfiguratorTest {
         JdbcUtils.closeConnection(connection);
 
         MysqlConfigurator configurator = new MysqlConfigurator(provider, TEST_TABLE_NAME);
-        configurator.setup();
-        configurator.cleanup();
+        configurator.createTriggers();
+        configurator.cleanupTriggers();
 
         int initialEventsCount = getEventsCount();
         insertToTestTable(1, "value");

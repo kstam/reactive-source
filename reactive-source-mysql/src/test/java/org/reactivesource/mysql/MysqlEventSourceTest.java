@@ -168,25 +168,25 @@ public class MysqlEventSourceTest {
     }
 
     @Test(groups = SMALL)
-    public void testSetupCallsTheSetupMethodOfTheConfigurator() {
+    public void testSetupCallsTheCreateTriggersMethodOfTheConfigurator() {
         MysqlConfigurator mockedConfigurator = mock(MysqlConfigurator.class);
 
         MysqlEventSource eventSource = new MysqlEventSource(provider, TEST_TABLE_NAME, mockedConfigurator, false);
 
         eventSource.setup();
 
-        verify(mockedConfigurator).setup();
+        verify(mockedConfigurator).createTriggers();
     }
 
     @Test(groups = SMALL)
-    public void testSetupCallsTheCleanupMethodOfTheConfigurator() {
+    public void testSetupCallsTheCleanupTriggersMethodOfTheConfigurator() {
         MysqlConfigurator mockedConfigurator = mock(MysqlConfigurator.class);
 
         MysqlEventSource eventSource = new MysqlEventSource(provider, TEST_TABLE_NAME, mockedConfigurator, false);
 
         eventSource.cleanup();
 
-        verify(mockedConfigurator).cleanup();
+        verify(mockedConfigurator).cleanupTriggers();
     }
 
     @Test(groups = SMALL)
@@ -197,7 +197,7 @@ public class MysqlEventSourceTest {
         eventSource.setup();
 
         verify(mockedConfigurator).initReactiveTables();
-        verify(mockedConfigurator).setup();
+        verify(mockedConfigurator).createTriggers();
     }
 
     @Test(groups = SMALL)
@@ -208,7 +208,7 @@ public class MysqlEventSourceTest {
         eventSource.setup();
 
         verify(mockedConfigurator, never()).initReactiveTables();
-        verify(mockedConfigurator).setup();
+        verify(mockedConfigurator).createTriggers();
     }
 
     private List<Listener> listAllListeners() throws SQLException {

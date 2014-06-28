@@ -116,12 +116,12 @@ public class MysqlEventSource implements EventSource {
         if (autoConfigure) {
             configurator.initReactiveTables();
         }
-        configurator.setup();
+        configurator.createTriggers();
     }
 
     @Override
     public void cleanup() {
-        configurator.cleanup();
+        configurator.cleanupTriggers();
     }
 
     @VisibleForTesting

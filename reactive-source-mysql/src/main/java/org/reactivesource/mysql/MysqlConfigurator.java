@@ -24,7 +24,7 @@ import static org.reactivesource.util.Assert.hasText;
 
 /**
  * Used for properly configuring the database ({@link #initReactiveTables()}) or the table for which the configurator
- * is defined ({@link #setup()}, {@link #cleanup()}
+ * is defined ({@link #createTriggers()}, {@link #cleanupTriggers()}
  */
 class MysqlConfigurator {
 
@@ -45,7 +45,7 @@ class MysqlConfigurator {
     /**
      * Will create the triggers that are required for the ReactiveSource framework to function.
      */
-    public void setup() {
+    public void createTriggers() {
         try (
                 Connection connection = connectionProvider.getConnection();
                 Statement stmt = connection.createStatement()
@@ -70,7 +70,7 @@ class MysqlConfigurator {
     /**
      * Will cleanup the triggers associated to the given tableName only if there are no listeners for this table
      */
-    public void cleanup() {
+    public void cleanupTriggers() {
         try (
                 Connection connection = connectionProvider.getConnection();
                 Statement stmt = connection.createStatement()
@@ -105,7 +105,7 @@ class MysqlConfigurator {
                 Connection connection = connectionProvider.getConnection();
         ) {
             if (!reactiveTablesExist(connection)) {
-                String query = IOUtils.toString(getClass().getResourceAsStream("create-reactive-schema.sql"));
+                String query = IOUtils.toString(getClass().getResourceAsStream("create-reactive-tables.sql"));
                 JdbcUtils.sql(connection, query);
             }
         } catch (SQLException | IOException e) {
