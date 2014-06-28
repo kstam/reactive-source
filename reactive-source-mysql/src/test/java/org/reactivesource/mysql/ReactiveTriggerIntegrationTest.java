@@ -6,21 +6,23 @@
 
 package org.reactivesource.mysql;
 
-import com.google.common.collect.Lists;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 
-import static org.reactivesource.mysql.ConnectionConstants.*;
+import static org.reactivesource.mysql.ConnectionConstants.PASSWORD;
+import static org.reactivesource.mysql.ConnectionConstants.TEST_TABLE_NAME;
+import static org.reactivesource.mysql.ConnectionConstants.URL;
+import static org.reactivesource.mysql.ConnectionConstants.USERNAME;
+import static org.reactivesource.mysql.MysqlEventRepoUtils.getEventsForTable;
 import static org.reactivesource.testing.TestConstants.INTEGRATION;
 
-/**
- * Created by kstamatoukos on 4/7/14.
- */
 public class ReactiveTriggerIntegrationTest {
 
     MysqlConnectionProvider provider = new MysqlConnectionProvider(URL, USERNAME, PASSWORD);
@@ -97,24 +99,4 @@ public class ReactiveTriggerIntegrationTest {
         connection.createStatement().execute(trigger.getDropSql());
     }
 
-    private List<MysqlEvent> getEventsForTable(String testTableName, Connection connection) throws SQLException {
-        try (
-                PreparedStatement stmt = connection.prepareStatement(GET_EVENTS_QUERY);
-        ) {
-
-            stmt.setObject(1, testTableName);
-            ResultSet rs = stmt.executeQuery();
-
-            List<MysqlEvent> result = Lists.newArrayList();
-            while (rs.next()) {
-                result.add(MysqlEventRepo.extractEvent(rs));
-            }
-
-            return result;
-        }
-    }
-
-    private static final String GET_EVENTS_QUERY =
-            "SELECT * FROM REACTIVE_EVENT " +
-                    "WHERE TABLE_NAME=?";
 }

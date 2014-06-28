@@ -15,7 +15,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
@@ -28,8 +27,6 @@ import static org.testng.Assert.*;
 
 public class MysqlEventRepoTest {
 
-    private static final String INSERT_QUERY = "INSERT INTO REACTIVE_EVENT VALUES (?, ?, ?, ?, ?, NOW())";
-    private static final String INSERT_WITH_DATE_QUERY = "INSERT INTO REACTIVE_EVENT VALUES (?, ?, ?, ?, ?, ?)";
     private MysqlEventRepo repo;
     private Connection connection;
     private Listener listener;
@@ -67,7 +64,7 @@ public class MysqlEventRepoTest {
         assertTrue(newEvents.isEmpty());
 
         MysqlEvent event = new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", TODAY);
-        insertEvent(event, connection);
+        MysqlEventRepoUtils.insertEvent(event, connection);
 
         newEvents = repo.getNewEventsForListener(listener, connection);
         assertEquals(newEvents.size(), 1);
@@ -84,7 +81,8 @@ public class MysqlEventRepoTest {
     public void testDoesNotReturnEventsThatWereCreatedBeforeTheListenerLastCheck()
             throws SQLException, InterruptedException {
         //event was there
-        insertEvent(new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", new Date()), connection);
+        MysqlEventRepoUtils
+                .insertEvent(new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", new Date()), connection);
 
         //listener was created later
         Thread.sleep(1000L);
@@ -100,7 +98,7 @@ public class MysqlEventRepoTest {
     public void testNeverReturnsAPreviousReturnedEventTwice() throws SQLException {
         for (int i = 0; i < 100; i++) {
             final MysqlEvent event = new MysqlEvent(i + 1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", new Date());
-            insertEvent(event, connection);
+            MysqlEventRepoUtils.insertEvent(event, connection);
             List<MysqlEvent> events = repo.getNewEventsForListener(listener, connection);
 
             assertEquals(events.size(), 1);
@@ -129,10 +127,10 @@ public class MysqlEventRepoTest {
         MysqlEvent event4 = new MysqlEvent(4, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}",
                 DateUtils.addDays(TODAY, 3));
 
-        insertEventWithDate(event2, connection);
-        insertEventWithDate(event1, connection);
-        insertEventWithDate(event3, connection);
-        insertEventWithDate(event4, connection);
+        MysqlEventRepoUtils.insertEventWithDate(event2, connection);
+        MysqlEventRepoUtils.insertEventWithDate(event1, connection);
+        MysqlEventRepoUtils.insertEventWithDate(event3, connection);
+        MysqlEventRepoUtils.insertEventWithDate(event4, connection);
 
         List<MysqlEvent> mysqlEvents = repo.getNewEventsForListener(listener, connection);
 
@@ -144,32 +142,4 @@ public class MysqlEventRepoTest {
 
     }
 
-    static void insertEvent(MysqlEvent event, Connection connection) throws SQLException {
-        try (
-                PreparedStatement stmt = connection.prepareStatement(INSERT_QUERY)
-        ) {
-            stmt.setLong(1, event.getEventId());
-            stmt.setString(2, event.getEntityName());
-            stmt.setObject(3, event.getEventType().getValue());
-            stmt.setObject(4, event.getOldEntity());
-            stmt.setObject(5, event.getNewEntity());
-
-            stmt.executeUpdate();
-        }
-    }
-
-    static void insertEventWithDate(MysqlEvent event, Connection connection) throws SQLException {
-        try (
-                PreparedStatement stmt = connection.prepareStatement(INSERT_WITH_DATE_QUERY)
-        ) {
-            stmt.setLong(1, event.getEventId());
-            stmt.setString(2, event.getEntityName());
-            stmt.setObject(3, event.getEventType().getValue());
-            stmt.setObject(4, event.getOldEntity());
-            stmt.setObject(5, event.getNewEntity());
-            stmt.setObject(6, event.getCreatedDt());
-
-            stmt.executeUpdate();
-        }
-    }
 }

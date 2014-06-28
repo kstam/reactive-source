@@ -155,7 +155,7 @@ public class MysqlConfiguratorTest {
 
         //tables are there from BeforeMethod. Insert some values.
         listenerRepo.insert(new Listener(TEST_TABLE_NAME), connection);
-        MysqlEventRepoTest
+        MysqlEventRepoUtils
                 .insertEvent(new MysqlEvent(1, TEST_TABLE_NAME, EventType.INSERT, "{}", "{}", TODAY), connection);
 
         MysqlConfigurator configurator = new MysqlConfigurator(provider, TEST_TABLE_NAME);

@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 import static org.reactivesource.mysql.ConnectionConstants.*;
 import static org.reactivesource.mysql.ListenerRepo.TABLE_NAME;
 import static org.reactivesource.mysql.ListenerRepo.extractListener;
-import static org.reactivesource.mysql.MysqlEventRepoTest.insertEvent;
+import static org.reactivesource.mysql.MysqlEventRepoUtils.insertEvent;
 import static org.reactivesource.testing.TestConstants.INTEGRATION;
 import static org.reactivesource.testing.TestConstants.SMALL;
 import static org.testng.Assert.assertEquals;
