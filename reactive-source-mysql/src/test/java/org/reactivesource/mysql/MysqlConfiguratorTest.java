@@ -107,6 +107,18 @@ public class MysqlConfiguratorTest {
         assertEquals(getEventsCount(), initialEventsCount);
     }
 
+    @Test(groups = INTEGRATION)
+    public void testSetupDoesntFailIfTriggersAlreadyExistForTheGivenTable() throws SQLException {
+        MysqlConfigurator configurator = new MysqlConfigurator(provider, TEST_TABLE_NAME);
+        configurator.setup();
+        configurator.setup();
+
+        int initialEventsCount = getEventsCount();
+        insertToTestTable(1, "value");
+
+        assertEquals(getEventsCount(), initialEventsCount + 1);
+    }
+
     @Test(groups = SMALL, expectedExceptions = ConfigurationException.class)
     public void testCleanupThrowsConfigurationExceptionWhenSqlExceptionOccures() throws SQLException {
         ConnectionProvider mockedProvider = getProviderReturningExceptionThrowingConnections();

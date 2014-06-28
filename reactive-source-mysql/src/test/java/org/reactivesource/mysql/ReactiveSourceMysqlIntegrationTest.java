@@ -6,7 +6,11 @@
 
 package org.reactivesource.mysql;
 
-import org.reactivesource.*;
+import org.reactivesource.ConnectionProvider;
+import org.reactivesource.EntityExtractor;
+import org.reactivesource.Event;
+import org.reactivesource.EventListener;
+import org.reactivesource.ReactiveSource;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -19,7 +23,10 @@ import java.util.Map;
 import static java.lang.Thread.sleep;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
-import static org.reactivesource.mysql.ConnectionConstants.*;
+import static org.reactivesource.mysql.ConnectionConstants.PASSWORD;
+import static org.reactivesource.mysql.ConnectionConstants.TEST_TABLE_NAME;
+import static org.reactivesource.mysql.ConnectionConstants.URL;
+import static org.reactivesource.mysql.ConnectionConstants.USERNAME;
 import static org.reactivesource.testing.TestConstants.INTEGRATION;
 import static org.testng.Assert.*;
 
@@ -58,14 +65,57 @@ public class ReactiveSourceMysqlIntegrationTest {
         sleep(1000L);
         verify(eventListener, times(ENTITIES)).onEvent(any(Event.class));
 
-        // stop the ReactiveDatasource
+        // cleanup the database and make sure that the delete events will arrive
         cleanupDatabase();
         sleep(1000L);
 
+        // stop the ReactiveDatasource
         rds.stop();
-        // cleanup the database and make sure that the delete events will arrive
+        sleep(1000L);
 
         verify(eventListener, times(2 * ENTITIES)).onEvent(any(Event.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test(groups = INTEGRATION)
+    public void testReactiveDatasourceBehaviorForMysqlEventSourceWithTwoReactiveSourcesForSameTable()
+            throws InterruptedException {
+        int ENTITIES = 10;
+        // create new ReactiveEventSource
+        MysqlEventSource eventSource1 = new MysqlEventSource(connectionProvider, TEST_TABLE_NAME);
+        MysqlEventSource eventSource2 = new MysqlEventSource(connectionProvider, TEST_TABLE_NAME);
+
+        ReactiveSource<String> rds1 = new ReactiveSource<>(eventSource1);
+        ReactiveSource<String> rds2 = new ReactiveSource<>(eventSource2);
+
+        // add new eventListener
+        rds1.addEventListener(eventListener);
+        rds2.addEventListener(eventListener);
+
+        rds1.start();
+        rds2.start();
+
+        sleep(200L); //wait for the pollers to start
+
+        // insert new entities
+        for (int i = 0; i < ENTITIES; i++) {
+            insertNewRow(i + 1, "someValue" + i);
+        }
+
+        // wait for database to be queried and verify all the insertion events arrived
+        sleep(1000L);
+        verify(eventListener, times(2 * ENTITIES)).onEvent(any(Event.class));
+
+        // cleanup the database and make sure that the delete events will arrive
+        cleanupDatabase();
+        sleep(1000L);
+
+        // stop the ReactiveDatasource
+        rds1.stop();
+        rds2.stop();
+        sleep(1000L);
+
+        verify(eventListener, times(4 * ENTITIES)).onEvent(any(Event.class));
     }
 
     private void insertNewRow(int id, String value) {

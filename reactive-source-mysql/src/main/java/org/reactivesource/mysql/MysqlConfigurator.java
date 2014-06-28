@@ -6,10 +6,13 @@
 
 package org.reactivesource.mysql;
 
+import com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException;
 import org.apache.commons.io.IOUtils;
 import org.reactivesource.ConnectionProvider;
 import org.reactivesource.exceptions.ConfigurationException;
 import org.reactivesource.util.JdbcUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -28,6 +31,8 @@ class MysqlConfigurator {
     private final TableMetadata tableMetadata;
     private final ConnectionProvider connectionProvider;
     private final String tableName;
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public MysqlConfigurator(ConnectionProvider connectionProvider, String tableName) {
         hasText(tableName, "tableName can not be null or empty");
@@ -53,13 +58,17 @@ class MysqlConfigurator {
             stmt.execute(insertTrigger.getCreateSql());
             stmt.execute(updateTrigger.getCreateSql());
             stmt.execute(deleteTrigger.getCreateSql());
+        } catch (MySQLSyntaxErrorException msee) {
+            logger.info("Triggers already existed. Skipping trigger creation.");
         } catch (SQLException sqle) {
-            throw new ConfigurationException("Couldn't setup " + tableName + " triggers for ReactiveSource", sqle);
+            logger.error("Couldn't setup triggers for ReactiveSource table [{}]", tableName);
+            throw new ConfigurationException("Couldn't setup triggers for ReactiveSource table [" + tableName + "]",
+                    sqle);
         }
     }
 
     /**
-     * Will cleanup the triggers associated to the given tableName
+     * Will cleanup the triggers associated to the given tableName only if there are no listeners for this table
      */
     public void cleanup() {
         try (
@@ -82,13 +91,13 @@ class MysqlConfigurator {
             }
 
         } catch (SQLException sqle) {
-            throw new ConfigurationException("Couldn't cleanup " + tableName + " reactive source triggers", sqle);
+            throw new ConfigurationException("Couldn't cleanup [" + tableName + "] reactive source triggers", sqle);
         }
     }
 
     /**
      * Will create the tables needed for the framework to work.
-     *
+     * <p/>
      * It will create new tables only if the tables are not already there.
      */
     public void initReactiveTables() {
