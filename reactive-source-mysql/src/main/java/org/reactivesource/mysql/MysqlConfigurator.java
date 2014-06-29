@@ -6,6 +6,7 @@
 
 package org.reactivesource.mysql;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException;
 import org.apache.commons.io.IOUtils;
@@ -17,12 +18,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
 import static org.reactivesource.util.Assert.hasText;
+import static org.reactivesource.util.Assert.notNull;
 
 /**
  * Used for properly configuring the database ({@link #initReactiveTables()}) or the table for which the configurator
@@ -30,7 +33,10 @@ import static org.reactivesource.util.Assert.hasText;
  */
 class MysqlConfigurator {
 
-    public static final String TABLE_NAME_NULL = "tableName can not be null or empty";
+    static final String TABLE_NAME_NULL = "tableName can not be null or empty";
+    static final String NULL_PROVIDER_MSG = "connectionProvider cant be null";
+    static final int DB_LOCK_TIMEOUT = 20;
+
     private final TableMetadata tableMetadata;
     private final ConnectionProvider connectionProvider;
     private final String tableName;
@@ -38,11 +44,17 @@ class MysqlConfigurator {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public MysqlConfigurator(ConnectionProvider connectionProvider, String tableName) {
+        this(connectionProvider, tableName, new TableMetadata(connectionProvider));
+    }
+
+    @VisibleForTesting MysqlConfigurator(ConnectionProvider connectionProvider, String tableName,
+                                         TableMetadata tableMetadata) {
         hasText(tableName, TABLE_NAME_NULL);
+        notNull(connectionProvider, NULL_PROVIDER_MSG);
 
         this.connectionProvider = connectionProvider;
         this.tableName = tableName;
-        this.tableMetadata = new TableMetadata(connectionProvider);
+        this.tableMetadata = tableMetadata;
     }
 
     /**
@@ -79,19 +91,25 @@ class MysqlConfigurator {
                 Connection connection = connectionProvider.getConnection();
                 Statement stmt = connection.createStatement()
         ) {
+            try {
+                getLockForName(tableName, connection);
+                ListenerRepo listenerRepo = new ListenerRepo();
+                List<Listener> listeners = listenerRepo.findByTableName(tableName, connection);
 
-            ListenerRepo repo = new ListenerRepo();
-            List<Listener> listeners = repo.findByTableName(tableName, connection);
+                if (listeners.isEmpty()) {
+                    List<String> tableColumnNames = tableMetadata.getColumnNames(tableName);
+                    ReactiveTrigger insertTrigger = ReactiveTriggerFactory.afterInsert(tableName, tableColumnNames);
+                    ReactiveTrigger updateTrigger = ReactiveTriggerFactory.afterUpdate(tableName, tableColumnNames);
+                    ReactiveTrigger deleteTrigger = ReactiveTriggerFactory.afterDelete(tableName, tableColumnNames);
 
-            if (listeners.isEmpty()) {
-                List<String> tableColumnNames = tableMetadata.getColumnNames(tableName);
-                ReactiveTrigger insertTrigger = ReactiveTriggerFactory.afterInsert(tableName, tableColumnNames);
-                ReactiveTrigger updateTrigger = ReactiveTriggerFactory.afterUpdate(tableName, tableColumnNames);
-                ReactiveTrigger deleteTrigger = ReactiveTriggerFactory.afterDelete(tableName, tableColumnNames);
+                    getLockForName(tableName, connection);
+                    stmt.execute(insertTrigger.getDropSql());
+                    stmt.execute(updateTrigger.getDropSql());
+                    stmt.execute(deleteTrigger.getDropSql());
 
-                stmt.execute(insertTrigger.getDropSql());
-                stmt.execute(updateTrigger.getDropSql());
-                stmt.execute(deleteTrigger.getDropSql());
+                }
+            } finally {
+                releaseLockForName(tableName, connection);
             }
 
         } catch (SQLException sqle) {
@@ -118,13 +136,43 @@ class MysqlConfigurator {
     }
 
     private void createTriggers(List<ReactiveTrigger> triggersToCreate, Connection connection) throws SQLException {
-        try (Statement stmt = connection.createStatement()) {
+        try {
+            getLockForName(tableName, connection);
             for (ReactiveTrigger trigger : triggersToCreate) {
-                if (!triggerExists(trigger, connection)) {
+                if (triggerExists(trigger, connection)) {
                     logSkipCreationMessage(trigger);
-                    stmt.execute(trigger.getCreateSql());
+                } else {
+                    createTrigger(trigger, connection);
                 }
             }
+        } finally {
+            releaseLockForName(tableName, connection);
+        }
+    }
+
+    private void getLockForName(String lockName, Connection connection) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement("select get_lock(?,?)")) {
+            stmt.setString(1, lockName);
+            stmt.setInt(2, DB_LOCK_TIMEOUT);
+            ResultSet rs = stmt.executeQuery();
+
+            rs.next();
+            if (rs.getInt(1) != 1) {
+                throw new SQLException("Failed to get lock with name " + lockName);
+            }
+        }
+    }
+
+    private void createTrigger(ReactiveTrigger trigger, Connection connection) throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(trigger.getCreateSql());
+        }
+    }
+
+    private void releaseLockForName(String lockName, Connection connection) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement("select release_lock(?)")) {
+            stmt.setString(1, lockName);
+            stmt.execute();
         }
     }
 
@@ -132,9 +180,10 @@ class MysqlConfigurator {
         try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery("SHOW TRIGGERS LIKE '" + trigger.getTriggerTable() + "'");
 
-            while(rs.next()) {
+            while (rs.next()) {
                 String triggerName = rs.getString("Trigger");
-                if (triggerName.equals(trigger.getTriggerName())) {
+                logger.debug("comparing {} with {}", triggerName, trigger.getTriggerName());
+                if (trigger.getTriggerName().toLowerCase().equals(triggerName.toLowerCase())) {
                     return true;
                 }
             }

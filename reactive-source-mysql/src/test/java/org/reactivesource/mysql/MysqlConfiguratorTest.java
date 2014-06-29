@@ -6,6 +6,7 @@
 
 package org.reactivesource.mysql;
 
+import org.mockito.Mock;
 import org.reactivesource.ConnectionProvider;
 import org.reactivesource.EventType;
 import org.reactivesource.exceptions.ConfigurationException;
@@ -13,10 +14,20 @@ import org.reactivesource.util.JdbcUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static org.mockito.Mockito.*;
-import static org.reactivesource.mysql.ConnectionConstants.*;
+import static org.mockito.MockitoAnnotations.initMocks;
+import static org.reactivesource.mysql.ConnectionConstants.PASSWORD;
+import static org.reactivesource.mysql.ConnectionConstants.TEST_TABLE_NAME;
+import static org.reactivesource.mysql.ConnectionConstants.URL;
+import static org.reactivesource.mysql.ConnectionConstants.USERNAME;
 import static org.reactivesource.testing.DateConstants.TODAY;
 import static org.reactivesource.testing.TestConstants.INTEGRATION;
 import static org.reactivesource.testing.TestConstants.SMALL;
@@ -31,8 +42,19 @@ public class MysqlConfiguratorTest {
 
     private ConnectionProvider provider;
 
+    @Mock
+    TableMetadata mockedTableMetadata;
+    @Mock
+    ConnectionProvider mockedErroneousProvider;
+
+    @BeforeMethod(groups = SMALL)
+    public void setupSmall() throws SQLException {
+        initMocks(this);
+        prepareMocks();
+    }
+
     @BeforeMethod(groups = INTEGRATION)
-    public void setup() {
+    public void setupIntegration() {
         new DbInitializer().setupDb();
         provider = new MysqlConnectionProvider(URL, USERNAME, PASSWORD);
     }
@@ -89,9 +111,9 @@ public class MysqlConfiguratorTest {
 
     @Test(groups = SMALL, expectedExceptions = ConfigurationException.class)
     public void testCreateTriggersThrowsConfigurationExceptionWhenSqlExceptionOccures() throws SQLException {
-        ConnectionProvider mockedProvider = getProviderReturningExceptionThrowingConnections();
+        MysqlConfigurator configurator = new MysqlConfigurator(mockedErroneousProvider, TEST_TABLE_NAME,
+                mockedTableMetadata);
 
-        MysqlConfigurator configurator = new MysqlConfigurator(mockedProvider, TEST_TABLE_NAME);
         configurator.createTriggers();
     }
 
@@ -121,15 +143,15 @@ public class MysqlConfiguratorTest {
 
     @Test(groups = SMALL, expectedExceptions = ConfigurationException.class)
     public void testCleanupTriggersThrowsConfigurationExceptionWhenSqlExceptionOccures() throws SQLException {
-        ConnectionProvider mockedProvider = getProviderReturningExceptionThrowingConnections();
-
-        MysqlConfigurator configurator = new MysqlConfigurator(mockedProvider, TEST_TABLE_NAME);
+        MysqlConfigurator configurator = new MysqlConfigurator(mockedErroneousProvider, TEST_TABLE_NAME,
+                mockedTableMetadata);
 
         configurator.cleanupTriggers();
     }
 
     @Test(groups = INTEGRATION)
-    public void testCleanupTriggersTriggersDoesNotRemoveTheTriggersIfThereAreOtherListenersForThisTable() throws SQLException {
+    public void testCleanupTriggersTriggersDoesNotRemoveTheTriggersIfThereAreOtherListenersForThisTable()
+            throws SQLException {
         Listener listener = new Listener(TEST_TABLE_NAME);
         ListenerRepo listenerRepo = new ListenerRepo();
 
@@ -183,20 +205,33 @@ public class MysqlConfiguratorTest {
 
     @Test(groups = SMALL, expectedExceptions = ConfigurationException.class)
     public void testInitReactiveTablesThrowsConfigurationExceptionIfSQLExceptionOccurs() throws SQLException {
-        ConnectionProvider mockedProvider = getProviderReturningExceptionThrowingConnections();
-
-        MysqlConfigurator configurator = new MysqlConfigurator(mockedProvider, TEST_TABLE_NAME);
+        MysqlConfigurator configurator = new MysqlConfigurator(mockedErroneousProvider, TEST_TABLE_NAME,
+                mockedTableMetadata);
 
         configurator.initReactiveTables();
     }
 
-    private ConnectionProvider getProviderReturningExceptionThrowingConnections() throws SQLException {
-        ConnectionProvider mockedProvider = mock(ConnectionProvider.class);
+    private void prepareMocks() throws SQLException {
         Connection mockedConnection = mock(Connection.class);
 
-        when(mockedProvider.getConnection()).thenReturn(mockedConnection);
+        when(mockedErroneousProvider.getConnection()).thenReturn(mockedConnection);
         when(mockedConnection.createStatement()).thenThrow(new SQLException());
-        return mockedProvider;
+        when(mockedConnection.prepareStatement(anyString())).thenThrow(new SQLException());
+
+        when(mockedTableMetadata.getColumnNames(anyString())).thenReturn(newArrayList("testCol"));
+    }
+
+    static List<String> getTriggers(String tableName, Connection connection) throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            List<String> triggerNames = newArrayList();
+            ResultSet rs = stmt.executeQuery("SHOW TRIGGERS LIKE '" + tableName + "'");
+
+            while (rs.next()) {
+                String triggerName = rs.getString("Trigger");
+                triggerNames.add(triggerName);
+            }
+            return triggerNames;
+        }
     }
 
     private void cleanupSchema() throws SQLException {
