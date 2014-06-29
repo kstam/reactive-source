@@ -28,7 +28,6 @@ class EventPoller<T> implements Runnable {
 
         this.eventSource = eventSource;
         this.eventChannel = eventChannel;
-        verifyConnectionToEventSource();
     }
 
     public void run() {
