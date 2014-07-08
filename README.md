@@ -81,7 +81,7 @@ Provided the same classes exist here is :
 What if I want a source that is not supported?
 -------
 
-If you have ideas about what other types of sources we could support feel free to contact me at kstamatoukos@ebay.com
+If you have ideas about what other types of sources we could support feel free to contact us at kstamatoukos@ebay.com (Kostas) or jferro@ebay.com (Xavi)
 
 Even better, you could implement the add in for the new source type yourself and thus contribute to our framework.
 
