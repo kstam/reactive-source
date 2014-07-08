@@ -11,7 +11,6 @@ import org.reactivesource.exceptions.DataAccessException;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Date;
@@ -19,8 +18,9 @@ import java.util.Date;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
-import static org.reactivesource.testing.TestConstants.*;
 import static org.reactivesource.mysql.ConnectionConstants.*;
+import static org.reactivesource.testing.TestConstants.INTEGRATION;
+import static org.reactivesource.testing.TestConstants.SMALL;
 import static org.testng.Assert.*;
 
 public class ListenerRepoTest {
@@ -33,7 +33,7 @@ public class ListenerRepoTest {
     private Connection connection;
 
     @BeforeMethod(groups = INTEGRATION)
-    public void setup() throws IOException, SQLException {
+    public void setup() {
         ConnectionProvider provider = new MysqlConnectionProvider(URL, USERNAME, PASSWORD);
         repo = new ListenerRepo();
         new DbInitializer().setupDb();

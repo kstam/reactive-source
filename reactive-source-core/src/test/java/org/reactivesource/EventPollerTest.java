@@ -57,6 +57,7 @@ public class EventPollerTest {
     public void testRegistersToTheEventSource() throws InterruptedException {
         when(evtSource.isConnected()).thenReturn(false);
         startPollingThread();
+        sleep(100);
         verify(evtSource).connect();
     }
 
@@ -64,7 +65,7 @@ public class EventPollerTest {
     public void testChecksConnectionToEventSourceAtEveryPoll() throws InterruptedException {
         startPollingThread();
         sleep(100);
-        verify(evtSource, times(2)).isConnected();
+        verify(evtSource, times(1)).isConnected();
     }
 
     @Test(groups = SMALL)
@@ -72,8 +73,8 @@ public class EventPollerTest {
         when(evtSource.isConnected()).thenReturn(false);
         startPollingThread();
         sleep(100);
-        verify(evtSource, times(2)).isConnected();
-        verify(evtSource, times(2)).connect();
+        verify(evtSource, times(1)).isConnected();
+        verify(evtSource, times(1)).connect();
     }
 
     @Test(groups = SMALL)
@@ -100,15 +101,6 @@ public class EventPollerTest {
 
         sleep(2 * TIME_BETWEEN_POLLS);
         verify(uncaughtExceptionHandler, never()).uncaughtException(any(Thread.class), any(DataAccessException.class));
-    }
-
-    @Test(groups = SMALL, expectedExceptions = DataAccessException.class)
-    public void testThrowsDataAccessExceptionIfFailedToConnectToEventSource() throws InterruptedException {
-        doThrow(new DataAccessException("")).when(evtSource).connect();
-        when(evtSource.isConnected()).thenReturn(false);
-        startPollingThread();
-
-        sleep(100L);
     }
 
     @Test(groups = SMALL)

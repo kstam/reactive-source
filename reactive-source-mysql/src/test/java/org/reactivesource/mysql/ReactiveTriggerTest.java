@@ -12,10 +12,10 @@ import org.testng.annotations.Test;
 import java.util.List;
 
 import static java.util.Collections.EMPTY_LIST;
-import static org.reactivesource.testing.TestConstants.*;
 import static org.reactivesource.mysql.ReactiveTrigger.TriggerEvent.*;
 import static org.reactivesource.mysql.ReactiveTrigger.TriggerTime.AFTER;
 import static org.reactivesource.mysql.ReactiveTrigger.TriggerTime.BEFORE;
+import static org.reactivesource.testing.TestConstants.SMALL;
 import static org.testng.Assert.*;
 
 /**

@@ -11,6 +11,7 @@ import org.reactivesource.ConnectionProvider;
 import org.reactivesource.Event;
 import org.reactivesource.EventSource;
 import org.reactivesource.exceptions.DataAccessException;
+import org.reactivesource.exceptions.ReactiveException;
 import org.reactivesource.util.JdbcUtils;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -22,10 +23,11 @@ import java.util.Map;
 import static com.google.common.collect.Lists.newArrayList;
 import static org.reactivesource.util.Assert.hasText;
 import static org.reactivesource.util.Assert.notNull;
+import static org.reactivesource.util.Assert.state;
 
 /**
  * Implementation of EventSource for Mysql database tables
- *
+ * <p/>
  * By default MysqlEventSource autConfigure option defaults to <code>false</code>. You can set it to true by using
  * the appropriate constructors
  */
@@ -66,6 +68,7 @@ public class MysqlEventSource implements EventSource {
 
         notNull(connectionProvider, "Connection Provider can not be null");
         hasText(tableName, "Table Name can not be null or empty");
+        verifyConfiguration(connectionProvider, tableName);
         this.tableName = tableName;
         this.connectionProvider = connectionProvider;
         this.eventMapper = new MysqlEventMapper();
@@ -77,9 +80,7 @@ public class MysqlEventSource implements EventSource {
 
     @Override
     public List<Event<Map<String, Object>>> getNewEvents() throws DataAccessException {
-        if (!isConnected()) {
-            throw new IllegalStateException("Calling getNewEvents without first connecting");
-        }
+        state(isConnected(), "Attempted to call 'getNewEvents' without first calling 'connect'");
         return mapMysqlEventsToGenericEvents(eventRepo.getNewEventsForListener(listener, connection));
     }
 
@@ -87,15 +88,13 @@ public class MysqlEventSource implements EventSource {
     public void connect() throws DataAccessException {
         if (!isConnected()) {
             connection = connectionProvider.getConnection();
-            listener = listenerRepo.insert(new Listener(tableName), connection);
+            updateListener(listener);
         }
     }
 
     @Override
     public void disconnect() throws DataAccessException {
         if (isConnected()) {
-            listenerRepo.remove(listener, connection);
-            listener = null;
             JdbcUtils.closeConnection(connection);
             connection = null;
         }
@@ -104,7 +103,7 @@ public class MysqlEventSource implements EventSource {
     @Override
     public boolean isConnected() {
         try {
-            return (connection != null && listener != null && !connection.isClosed());
+            return (connection != null && !connection.isClosed());
         } catch (SQLException e) {
             return false;
         }
@@ -115,17 +114,50 @@ public class MysqlEventSource implements EventSource {
         if (autoConfigure) {
             configurator.initReactiveTables();
         }
-        configurator.setup();
+        registerListener();
+        configurator.createTriggers();
     }
 
     @Override
     public void cleanup() {
-        configurator.cleanup();
+        configurator.cleanupTriggers();
+        cleanupListener();
     }
 
-    @VisibleForTesting
-    boolean isAutoConfigure() {
+    @VisibleForTesting boolean isAutoConfigure() {
         return autoConfigure;
+    }
+
+    private void registerListener() {
+        Connection connection = connectionProvider.getConnection();
+        try {
+            if (listener == null) {
+                listener = listenerRepo.insert(new Listener(tableName), connection);
+            }
+        } finally {
+            JdbcUtils.closeConnection(connection);
+        }
+    }
+
+    private void updateListener(Listener listener) {
+        state(listener != null, "Attempted to call 'connect' before calling 'setup'");
+        Connection connection = connectionProvider.getConnection();
+        try {
+            listenerRepo.refreshLastCheck(listener, connection);
+        } finally {
+            JdbcUtils.closeConnection(connection);
+        }
+    }
+
+    private void cleanupListener() {
+        state(listener != null, "Attempted to call 'cleanup' before calling 'setup'");
+        Connection connection = connectionProvider.getConnection();
+        try {
+            listenerRepo.remove(listener, connection);
+            listener = null;
+        } finally {
+            JdbcUtils.closeConnection(connection);
+        }
     }
 
     private List<Event<Map<String, Object>>> mapMysqlEventsToGenericEvents(List<MysqlEvent> mysqlEvents) {
@@ -134,5 +166,18 @@ public class MysqlEventSource implements EventSource {
             result.add(eventMapper.mapToGenericEvent(event));
         }
         return result;
+    }
+
+    private void verifyConfiguration(ConnectionProvider connectionProvider, String tableName) {
+        try (Connection connection = connectionProvider.getConnection()) {
+            verifyTableExists(connection, tableName);
+        } catch (SQLException sqle) {
+            throw new ReactiveException(
+                    "Could not initialize EventSource. Verify that the connection parameters are correct.", sqle);
+        }
+    }
+
+    private void verifyTableExists(Connection connection, String tableName) throws SQLException {
+        connection.createStatement().executeQuery("SELECT * FROM " + tableName + " LIMIT 1");
     }
 }

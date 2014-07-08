@@ -13,7 +13,7 @@ import org.testng.annotations.Test;
 import java.util.Date;
 import java.util.Map;
 
-import static org.reactivesource.testing.TestConstants.*;
+import static org.reactivesource.testing.TestConstants.SMALL;
 import static org.testng.Assert.*;
 
 public class MysqlEventMapperTest {
